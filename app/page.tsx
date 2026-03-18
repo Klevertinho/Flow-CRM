@@ -85,9 +85,9 @@ export default function Landing() {
             sem depender da memória ou do caos do WhatsApp.
           </p>
 
-          <ButtonPrimary>
-            Começar agora
-          </ButtonPrimary>
+          <ButtonPrimary href="/signup">
+  Começar agora
+</ButtonPrimary>
         </div>
       </Section>
 
@@ -228,9 +228,9 @@ export default function Landing() {
           Comece agora e pare de perder vendas
         </h2>
 
-        <ButtonPrimary>
-          Criar conta
-        </ButtonPrimary>
+        <ButtonPrimary href="/signup">
+  Criar conta
+</ButtonPrimary>
       </Section>
     </div>
   );
