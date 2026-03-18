@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
 
 export default function SignupPage() {
+  const router = useRouter();
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
@@ -22,19 +24,31 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.signUp({
+      const { error: signupError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (signupError) {
+        setError(signupError.message);
         return;
       }
 
-      setSuccess(
-        "Conta criada. Se sua autenticação exigir confirmação por email, confira sua caixa de entrada."
-      );
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginError) {
+        setSuccess(
+          "Conta criada. Agora entre com seu email e senha para continuar."
+        );
+        return;
+      }
+
+      setSuccess("Conta criada. Redirecionando...");
+      router.push("/billing");
+      router.refresh();
     } catch {
       setError("Não foi possível criar a conta agora.");
     } finally {
