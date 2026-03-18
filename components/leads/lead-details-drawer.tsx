@@ -155,29 +155,29 @@ export function LeadDetailsDrawer({
   if (!open || !lead) return null;
 
   async function handleAddNote() {
-    if (!newNote.trim()) return;
+  if (!lead || !newNote.trim()) return;
 
-    try {
-      setSavingNote(true);
-      await onAddNote(lead.id, newNote.trim());
-      setNewNote("");
-    } finally {
-      setSavingNote(false);
-    }
+  try {
+    setSavingNote(true);
+    await onAddNote(lead.id, newNote.trim());
+    setNewNote("");
+  } finally {
+    setSavingNote(false);
   }
+}
 
   async function handleSaveEditedNote(noteId: string) {
-    if (!editingNoteBody.trim()) return;
+  if (!lead || !editingNoteBody.trim()) return;
 
-    try {
-      setSavingNote(true);
-      await onUpdateNote(lead.id, noteId, editingNoteBody.trim());
-      setEditingNoteId(null);
-      setEditingNoteBody("");
-    } finally {
-      setSavingNote(false);
-    }
+  try {
+    setSavingNote(true);
+    await onUpdateNote(lead.id, noteId, editingNoteBody.trim());
+    setEditingNoteId(null);
+    setEditingNoteBody("");
+  } finally {
+    setSavingNote(false);
   }
+}
 
   return (
     <div
