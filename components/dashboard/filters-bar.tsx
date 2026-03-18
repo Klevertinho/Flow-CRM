@@ -132,12 +132,13 @@ export function FiltersBar({ filters, onChange }: Props) {
         <Chip
           onClick={() =>
             onChange({
-              search: "",
-              view: "kanban",
-              followUp: "all",
-              status: "all",
-              sort: "recent",
-            })
+  query: "",
+  search: "",
+  view: "kanban",
+  followUp: "all",
+  status: "all",
+  sort: "recent",
+})
           }
         >
           Limpar filtros
