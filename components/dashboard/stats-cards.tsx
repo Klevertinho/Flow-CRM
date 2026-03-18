@@ -67,7 +67,7 @@ export function StatsCards({
       className="flowcrm-stats-grid"
     >
       {items.map((item) => (
-        <SectionCard key={item.label}>
+        <SectionCard key={item.label} title={item.label}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>
               {item.label}
