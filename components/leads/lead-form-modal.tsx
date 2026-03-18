@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal } from "../shared/modal";
-import type { Lead, LeadFormValues } from "../../types/lead";
+import type { Lead, LeadFormValues, LeadTag } from "../../types/lead";
 
 type Props = {
   open: boolean;
@@ -151,9 +151,9 @@ export function LeadFormModal({
       setSaving(true);
 
       const normalizedTags = tagsInput
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean);
+  .split(",")
+  .map((tag) => tag.trim())
+  .filter(Boolean) as LeadTag[];
 
       await onSubmit({
         ...values,
