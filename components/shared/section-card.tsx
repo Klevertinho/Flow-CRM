@@ -4,6 +4,7 @@ import React from "react";
 
 export function SectionCard(props: {
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -23,19 +24,34 @@ export function SectionCard(props: {
           marginBottom: 14,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           flexWrap: "wrap",
           gap: 10,
         }}
       >
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 900,
-            color: "#f8fafc",
-          }}
-        >
-          {props.title}
+        <div>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 900,
+              color: "#f8fafc",
+            }}
+          >
+            {props.title}
+          </div>
+
+          {props.subtitle && (
+            <div
+              style={{
+                marginTop: 6,
+                color: "#94a3b8",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {props.subtitle}
+            </div>
+          )}
         </div>
       </div>
 
