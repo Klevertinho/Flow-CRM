@@ -123,8 +123,8 @@ export function FiltersBar({ filters, onChange }: Props) {
         </Chip>
 
         <Chip
-          active={filters.followUp === "none"}
-          onClick={() => onChange({ ...filters, followUp: "none" })}
+          active={filters.followUp === "no_followup"}
+          onClick={() => onChange({ ...filters, followUp: "no_followup" })}
         >
           Sem follow-up
         </Chip>
