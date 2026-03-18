@@ -11,6 +11,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -272,23 +273,51 @@ export default function LoginPage() {
               >
                 Senha
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Sua senha"
-                required
+
+              <div
                 style={{
-                  width: "100%",
-                  padding: "14px 15px",
-                  borderRadius: 14,
-                  border: "1px solid #334155",
-                  background: "#0b1220",
-                  color: "#f8fafc",
-                  outline: "none",
-                  fontSize: 15,
+                  position: "relative",
                 }}
-              />
+              >
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Sua senha"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "14px 110px 14px 15px",
+                    borderRadius: 14,
+                    border: "1px solid #334155",
+                    background: "#0b1220",
+                    color: "#f8fafc",
+                    outline: "none",
+                    fontSize: 15,
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "1px solid #334155",
+                    background: "rgba(15,23,42,0.85)",
+                    color: "#cbd5e1",
+                    borderRadius: 10,
+                    padding: "8px 10px",
+                    fontWeight: 800,
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  {showPassword ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
             </div>
 
             {error ? (
