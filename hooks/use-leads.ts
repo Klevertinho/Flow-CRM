@@ -13,6 +13,7 @@ const repository = new SupabaseLeadRepository();
 
 const DEFAULT_FILTERS: LeadFilters = {
   query: "",
+  search: "",
   status: "all",
   followUp: "all",
   sort: "recent",
