@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     }
 
     const stripe = new Stripe(secretKey, {
-      apiVersion: "2025-02-24.acacia",
+      apiVersion: "2026-02-25.clover",
     });
 
     const selectedPlan = PLAN_CONFIG[plan];
