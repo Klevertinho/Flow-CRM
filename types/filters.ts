@@ -28,6 +28,7 @@ export type SortMode =
 export type ViewMode = "kanban" | "list";
 
 export type LeadFilters = {
+  search: string;
   query: string;
   status: "all" | LeadStatus;
   followUp: FollowUpFilter;
