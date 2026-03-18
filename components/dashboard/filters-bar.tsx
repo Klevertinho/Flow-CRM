@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { Filters } from "../../types/filters";
+import type { LeadFilters as Filters } from "../../types/filters";
 
 type Props = {
   filters: Filters;
