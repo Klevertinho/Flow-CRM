@@ -13,8 +13,8 @@ export async function createClient() {
           return cookieStore.getAll();
         },
         setAll() {
-          // Em Server Components/Layout não escrevemos cookies aqui.
-          // Isso fica para middleware/route handlers se necessário.
+          // Server Components não escrevem cookies diretamente.
+          // O middleware cuida disso.
         },
       },
     }
