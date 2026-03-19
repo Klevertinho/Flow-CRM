@@ -24,7 +24,12 @@ export default async function ProtectedLayout({
     .eq("status", "active")
     .maybeSingle();
 
-  if (subscriptionError || !subscription) {
+  if (subscriptionError) {
+    console.error("SUBSCRIPTION CHECK ERROR:", subscriptionError);
+    redirect("/billing");
+  }
+
+  if (!subscription) {
     redirect("/billing");
   }
 

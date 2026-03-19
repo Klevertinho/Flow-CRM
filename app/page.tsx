@@ -1,10 +1,7 @@
-"use client";
-
 import Link from "next/link";
+import { createClient } from "../lib/supabase/server";
 
-function Section(props: {
-  children: React.ReactNode;
-}) {
+function Section(props: { children: React.ReactNode }) {
   return (
     <section
       style={{
@@ -20,11 +17,11 @@ function Section(props: {
 
 function ButtonPrimary(props: {
   children: React.ReactNode;
-  href?: string;
+  href: string;
 }) {
   return (
     <Link
-      href={props.href || "/login"}
+      href={props.href}
       style={{
         display: "inline-block",
         padding: "14px 22px",
@@ -41,7 +38,39 @@ function ButtonPrimary(props: {
   );
 }
 
-export default function Landing() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let primaryHref = "/signup";
+  let primaryLabel = "Começar agora";
+  let secondaryHref = "/signup";
+  let secondaryLabel = "Criar conta";
+
+  if (user) {
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (subscription) {
+      primaryHref = "/crm";
+      primaryLabel = "Ir para o CRM";
+      secondaryHref = "/crm";
+      secondaryLabel = "Abrir meu CRM";
+    } else {
+      primaryHref = "/billing";
+      primaryLabel = "Ativar assinatura";
+      secondaryHref = "/billing";
+      secondaryLabel = "Ir para assinatura";
+    }
+  }
+
   return (
     <div
       style={{
@@ -49,7 +78,6 @@ export default function Landing() {
         color: "#f8fafc",
       }}
     >
-      {/* HERO */}
       <Section>
         <div style={{ maxWidth: 700 }}>
           <div
@@ -85,13 +113,10 @@ export default function Landing() {
             sem depender da memória ou do caos do WhatsApp.
           </p>
 
-          <ButtonPrimary href="/signup">
-  Começar agora
-</ButtonPrimary>
+          <ButtonPrimary href={primaryHref}>{primaryLabel}</ButtonPrimary>
         </div>
       </Section>
 
-      {/* PROBLEMA */}
       <Section>
         <h2
           style={{
@@ -116,7 +141,6 @@ export default function Landing() {
         </p>
       </Section>
 
-      {/* SOLUÇÃO */}
       <Section>
         <h2
           style={{
@@ -150,7 +174,6 @@ export default function Landing() {
         </div>
       </Section>
 
-      {/* COMO FUNCIONA */}
       <Section>
         <h2
           style={{
@@ -163,14 +186,16 @@ export default function Landing() {
         </h2>
 
         <div style={{ color: "#94a3b8", lineHeight: 1.8 }}>
-          1. Adicione seus leads<br />
-          2. Organize por status<br />
-          3. Acompanhe follow-ups<br />
+          1. Adicione seus leads
+          <br />
+          2. Organize por status
+          <br />
+          3. Acompanhe follow-ups
+          <br />
           4. Feche mais vendas
         </div>
       </Section>
 
-      {/* PREÇO */}
       <Section>
         <div
           style={{
@@ -210,13 +235,10 @@ export default function Landing() {
             Tudo que você precisa para organizar sua operação comercial
           </p>
 
-          <ButtonPrimary href="/login">
-            Começar agora
-          </ButtonPrimary>
+          <ButtonPrimary href={secondaryHref}>{secondaryLabel}</ButtonPrimary>
         </div>
       </Section>
 
-      {/* CTA FINAL */}
       <Section>
         <h2
           style={{
@@ -228,9 +250,7 @@ export default function Landing() {
           Comece agora e pare de perder vendas
         </h2>
 
-        <ButtonPrimary href="/signup">
-  Criar conta
-</ButtonPrimary>
+        <ButtonPrimary href={secondaryHref}>{secondaryLabel}</ButtonPrimary>
       </Section>
     </div>
   );
