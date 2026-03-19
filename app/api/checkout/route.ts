@@ -76,9 +76,10 @@ export async function POST(req: Request) {
           },
           quantity: 1,
         },
-      ],
-      success_url: "http://localhost:3000/billing?status=success",
-      cancel_url: "http://localhost:3000/billing?status=cancel",
+      ],const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+
+success_url: `${siteUrl}/billing?status=success`,
+cancel_url: `${siteUrl}/billing?status=cancel`,
       client_reference_id: user.id,
       metadata: {
         plan,
