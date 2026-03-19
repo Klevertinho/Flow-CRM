@@ -303,9 +303,9 @@ export default function BillingPage() {
     return () => {
       cancelled = true;
     };
-  }, [mounted]);
+  }, [mounted, status]);
 
-  async function handleSubscribe(plan: PlanKey) {
+  async function handleCheckout(plan: PlanKey) {
     try {
       setLoadingPlan(plan);
 
@@ -321,6 +321,10 @@ export default function BillingPage() {
 
       if (!res.ok) {
         throw new Error(data.error || "Erro ao iniciar checkout.");
+      }
+
+      if (!data.url) {
+        throw new Error("Checkout sem URL de retorno.");
       }
 
       window.location.href = data.url;
@@ -645,7 +649,7 @@ export default function BillingPage() {
                   "Portal de assinatura incluso",
                 ]}
                 cta="Começar no Starter"
-                onClick={() => handleSubscribe("starter")}
+                onClick={() => handleCheckout("starter")}
                 loading={loadingPlan === "starter"}
                 footer="Entrada mais simples para operação individual."
               />
@@ -661,7 +665,7 @@ export default function BillingPage() {
                   "Posicionamento ideal para operação mais séria",
                 ]}
                 cta="Escolher o Pro"
-                onClick={() => handleSubscribe("pro")}
+                onClick={() => handleCheckout("pro")}
                 loading={loadingPlan === "pro"}
                 highlighted
                 footer="Melhor custo-benefício para quem quer crescer com mais estrutura."

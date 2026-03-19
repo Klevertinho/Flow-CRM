@@ -6,12 +6,19 @@ const secretKey = process.env.STRIPE_SECRET_KEY!;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
 const PLAN_CONFIG = {
+  starter: {
+    name: "FlowCRM Starter",
+    price: 3900,
+    description: "CRM leve para organizar leads e follow-ups",
+  },
   pro: {
     name: "FlowCRM Pro",
-    price: 3900,
-    description: "CRM leve para operação comercial via WhatsApp",
+    price: 7900,
+    description: "Plano com mais percepção de valor e evolução do produto",
   },
-};
+} as const;
+
+type PlanKey = keyof typeof PLAN_CONFIG;
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +37,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const plan = body?.plan === "pro" ? "pro" : "pro";
+    const requestedPlan = body?.plan;
+    const plan: PlanKey =
+      requestedPlan === "pro" || requestedPlan === "starter"
+        ? requestedPlan
+        : "starter";
 
     const stripe = new Stripe(secretKey, {
       apiVersion: "2026-02-25.clover",
