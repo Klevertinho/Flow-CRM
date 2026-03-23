@@ -101,13 +101,52 @@ function SoftCard(props: {
       }}
     >
       <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  }}
+>
+  {user ? (
+    <>
+      {/* STATUS DO USUÁRIO */}
+      <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 12,
+          padding: "10px 14px",
+          borderRadius: 14,
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          color: "rgba(255,255,255,0.75)",
+          fontSize: 13,
+          fontWeight: 700,
         }}
       >
+        {user.email}
+      </div>
+
+      {/* IR PARA CRM */}
+      <TopButton href="/app" primary>
+        Ir para o CRM
+      </TopButton>
+
+      {/* LOGOUT */}
+      <TopButton href="/logout">
+        Sair
+      </TopButton>
+    </>
+  ) : (
+    <>
+      <TopButton href="/login">
+        Login
+      </TopButton>
+
+      <TopButton href="#pricing" primary scroll>
+        Assinar
+      </TopButton>
+    </>
+  )}
+</div>
         {props.icon ? (
           <div
             style={{
