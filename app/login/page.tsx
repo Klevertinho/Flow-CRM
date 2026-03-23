@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "../../lib/supabase/server";
 import LoginClientPage from "./login-client-page";
@@ -19,7 +18,7 @@ export default async function LoginPage() {
       .maybeSingle();
 
     if (subscription) {
-      redirect("/");
+      redirect("/app");
     }
 
     redirect("/billing");
