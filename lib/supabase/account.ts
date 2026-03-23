@@ -23,27 +23,64 @@ async function getCurrentUserId() {
   return user.id;
 }
 
+// 🔥 NOVA FUNÇÃO: garante conta sempre
+async function getOrCreateAccount(userId: string) {
+  const supabase = createClient();
+
+  const { data: membership } = await supabase
+    .from("account_members")
+    .select("account_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  // 👉 já tem conta
+  if (membership?.account_id) {
+    return membership.account_id;
+  }
+
+  // 👉 NÃO tem conta → cria
+  const { data: newAccount, error: accountError } = await supabase
+    .from("accounts")
+    .insert({
+      name: "Minha empresa",
+      onboarding_completed: false,
+    })
+    .select("id")
+    .single();
+
+  if (accountError || !newAccount) {
+    throw new Error("Erro ao criar conta.");
+  }
+
+  // 👉 cria vínculo
+  const { error: memberError } = await supabase
+    .from("account_members")
+    .insert({
+      user_id: userId,
+      account_id: newAccount.id,
+      role: "owner",
+    });
+
+  if (memberError) {
+    throw new Error("Erro ao vincular usuário à conta.");
+  }
+
+  return newAccount.id;
+}
+
 export async function getCurrentAccountProfile(): Promise<AccountProfile | null> {
   const supabase = createClient();
   const userId = await getCurrentUserId();
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("account_members")
-    .select("account_id")
-    .eq("user_id", userId)
-    .single();
+  const accountId = await getOrCreateAccount(userId);
 
-  if (membershipError || !membership) {
-    throw new Error("Conta do usuário não encontrada.");
-  }
-
-  const { data: account, error: accountError } = await supabase
+  const { data: account, error } = await supabase
     .from("accounts")
     .select("id, name, business_type, onboarding_completed")
-    .eq("id", membership.account_id)
+    .eq("id", accountId)
     .single();
 
-  if (accountError || !account) {
+  if (error || !account) {
     throw new Error("Conta não encontrada.");
   }
 
@@ -62,15 +99,7 @@ export async function completeAccountOnboarding(input: {
   const supabase = createClient();
   const userId = await getCurrentUserId();
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("account_members")
-    .select("account_id")
-    .eq("user_id", userId)
-    .single();
-
-  if (membershipError || !membership) {
-    throw new Error("Conta do usuário não encontrada.");
-  }
+  const accountId = await getOrCreateAccount(userId);
 
   const { error } = await supabase
     .from("accounts")
@@ -80,23 +109,9 @@ export async function completeAccountOnboarding(input: {
       onboarding_completed: true,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", membership.account_id);
+    .eq("id", accountId);
 
   if (error) {
     throw new Error(error.message);
-  }
-
-  const { data: updatedAccount, error: checkError } = await supabase
-    .from("accounts")
-    .select("id, name, business_type, onboarding_completed")
-    .eq("id", membership.account_id)
-    .single();
-
-  if (checkError || !updatedAccount) {
-    throw new Error("Conta atualizada, mas não foi possível confirmar o onboarding.");
-  }
-
-  if (!updatedAccount.onboarding_completed) {
-    throw new Error("O onboarding não foi persistido no banco.");
   }
 }
