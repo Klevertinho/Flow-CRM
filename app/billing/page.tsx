@@ -18,7 +18,7 @@ export default async function BillingPage({
     redirect("/login");
   }
 
-  const { data: subscription, error: subscriptionError } = await supabase
+  const { data: subscription } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
@@ -32,35 +32,9 @@ export default async function BillingPage({
       : "idle";
 
   return (
-    <>
-      <div
-        style={{
-          padding: 12,
-          background: "#111827",
-          color: "#fff",
-          fontSize: 14,
-          borderBottom: "1px solid #334155",
-          whiteSpace: "pre-wrap",
-        }}
-      >
-        {JSON.stringify(
-          {
-            userId: user.id,
-            userEmail: user.email,
-            hasSubscription: !!subscription,
-            subscriptionUserId: subscription?.user_id ?? null,
-            subscriptionStatus: subscription?.status ?? null,
-            subscriptionError: subscriptionError?.message ?? null,
-          },
-          null,
-          2
-        )}
-      </div>
-
-      return (
-  <BillingClientPage
-    hasActiveSubscription={!!subscription}
-    initialStatus={status}
-  />
-);
+    <BillingClientPage
+      hasActiveSubscription={!!subscription}
+      initialStatus={status}
+    />
+  );
 }
