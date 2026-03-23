@@ -46,30 +46,30 @@ export default async function LandingPage() {
   } = await supabase.auth.getUser();
 
   let primaryHref = "/signup";
-  let primaryLabel = "Começar agora";
-  let secondaryHref = "/signup";
-  let secondaryLabel = "Criar conta";
+let primaryLabel = "Começar agora";
+let secondaryHref = "/signup";
+let secondaryLabel = "Criar conta";
 
-  if (user) {
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
+if (user) {
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
 
-    if (subscription) {
-      primaryHref = "/";
-      primaryLabel = "Ir para o CRM";
-      secondaryHref = "/";
-      secondaryLabel = "Abrir meu CRM";
-    } else {
-      primaryHref = "/billing";
-      primaryLabel = "Ativar assinatura";
-      secondaryHref = "/billing";
-      secondaryLabel = "Ir para assinatura";
-    }
+  if (subscription) {
+    primaryHref = "/app";
+    primaryLabel = "Ir para o CRM";
+    secondaryHref = "/app";
+    secondaryLabel = "Abrir meu CRM";
+  } else {
+    primaryHref = "/billing";
+    primaryLabel = "Ativar assinatura";
+    secondaryHref = "/billing";
+    secondaryLabel = "Ir para assinatura";
   }
+}
 
   return (
     <div
