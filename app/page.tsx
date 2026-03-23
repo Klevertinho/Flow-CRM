@@ -59,9 +59,9 @@ export default async function LandingPage() {
       .maybeSingle();
 
     if (subscription) {
-      primaryHref = "/crm";
+      primaryHref = "/";
       primaryLabel = "Ir para o CRM";
-      secondaryHref = "/crm";
+      secondaryHref = "/";
       secondaryLabel = "Abrir meu CRM";
     } else {
       primaryHref = "/billing";

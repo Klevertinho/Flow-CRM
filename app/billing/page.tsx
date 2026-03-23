@@ -57,10 +57,10 @@ export default async function BillingPage({
         )}
       </div>
 
-      <BillingClientPage
-        hasActiveSubscription={!!subscription}
-        initialStatus={status}
-      />
-    </>
-  );
+      return (
+  <BillingClientPage
+    hasActiveSubscription={!!subscription}
+    initialStatus={status}
+  />
+);
 }
