@@ -101,52 +101,13 @@ function SoftCard(props: {
       }}
     >
       <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    flexWrap: "wrap",
-  }}
->
-  {user ? (
-    <>
-      {/* STATUS DO USUÁRIO */}
-      <div
         style={{
-          padding: "10px 14px",
-          borderRadius: 14,
-          background: "rgba(255,255,255,0.05)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          color: "rgba(255,255,255,0.75)",
-          fontSize: 13,
-          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 12,
         }}
       >
-        {user.email}
-      </div>
-
-      {/* IR PARA CRM */}
-      <TopButton href="/app" primary>
-        Ir para o CRM
-      </TopButton>
-
-      {/* LOGOUT */}
-      <TopButton href="/logout">
-        Sair
-      </TopButton>
-    </>
-  ) : (
-    <>
-      <TopButton href="/login">
-        Login
-      </TopButton>
-
-      <TopButton href="#pricing" primary scroll>
-        Assinar
-      </TopButton>
-    </>
-  )}
-</div>
         {props.icon ? (
           <div
             style={{
@@ -527,16 +488,35 @@ export default async function LandingPage() {
             flexWrap: "wrap",
           }}
         >
-          <TopButton href="/login">{user ? "Minha conta" : "Login"}</TopButton>
+          {user ? (
+            <>
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                {user.email}
+              </div>
 
-          {hasActiveSubscription ? (
-            <TopButton href="/app" primary>
-              Ir para o CRM
-            </TopButton>
+              <TopButton href="/app" primary>
+                Ir para o CRM
+              </TopButton>
+
+              <TopButton href="/logout">Sair</TopButton>
+            </>
           ) : (
-            <TopButton href="#pricing" primary scroll>
-              Assinar
-            </TopButton>
+            <>
+              <TopButton href="/login">Login</TopButton>
+              <TopButton href="#pricing" primary scroll>
+                Assinar
+              </TopButton>
+            </>
           )}
         </div>
       </header>
@@ -742,9 +722,9 @@ export default async function LandingPage() {
                 </div>
                 <div
                   style={{
-                    color: "rgba(255,255,255,0.66)",
-                    lineHeight: 1.7,
-                    fontSize: 14,
+                    color: "rgba(255,255,255,0.68)",
+                    lineHeight: 1.8,
+                    fontSize: 15,
                   }}
                 >
                   14:00 · João · proposta enviada · retorno pendente
