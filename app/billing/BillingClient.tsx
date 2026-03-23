@@ -181,6 +181,213 @@ function PlanCard(props: {
   );
 }
 
+function PlanConfirmModal(props: {
+  plan: PlanKey;
+  onClose: () => void;
+  onConfirm: () => void;
+  confirming: boolean;
+}) {
+  const isPro = props.plan === "pro";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 999,
+        background: "rgba(2,6,23,0.82)",
+        backdropFilter: "blur(6px)",
+        display: "grid",
+        placeItems: "center",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 560,
+          borderRadius: 30,
+          padding: 30,
+          background:
+            "linear-gradient(180deg, rgba(25,48,112,0.34) 0%, rgba(10,18,35,0.98) 100%)",
+          border: "1px solid rgba(59,130,246,0.48)",
+          boxShadow: "0 40px 120px rgba(0,0,0,0.55)",
+          color: "#f8fafc",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            padding: "8px 14px",
+            borderRadius: 999,
+            background: "rgba(37,99,235,0.16)",
+            border: "1px solid rgba(96,165,250,0.22)",
+            color: "#bfdbfe",
+            fontSize: 12,
+            fontWeight: 800,
+            marginBottom: 18,
+          }}
+        >
+          Confirmar assinatura
+        </div>
+
+        <h2
+          style={{
+            margin: "0 0 10px",
+            fontSize: 34,
+            lineHeight: 1.05,
+            letterSpacing: -1,
+            fontWeight: 900,
+          }}
+        >
+          {isPro ? "Plano Pro" : "Plano Starter"}
+        </h2>
+
+        <p
+          style={{
+            margin: 0,
+            color: "rgba(255,255,255,0.68)",
+            fontSize: 16,
+            lineHeight: 1.75,
+          }}
+        >
+          {isPro
+            ? "Mais estrutura, mais valor percebido e um plano mais forte para crescer sem improviso."
+            : "Uma entrada simples para organizar sua operação comercial sem complicação."}
+        </p>
+
+        <div
+          style={{
+            marginTop: 22,
+            padding: 18,
+            borderRadius: 20,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 16,
+              color: "rgba(255,255,255,0.64)",
+              marginBottom: 6,
+            }}
+          >
+            Cobrança mensal
+          </div>
+          <div
+            style={{
+              fontSize: 38,
+              fontWeight: 900,
+              letterSpacing: -1,
+              color: "#fff",
+            }}
+          >
+            {isPro ? "R$ 79/mês" : "R$ 39/mês"}
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              color: "rgba(255,255,255,0.58)",
+              lineHeight: 1.7,
+              fontSize: 14,
+            }}
+          >
+            Ambiente seguro de pagamento. Você será direcionado ao checkout para concluir a assinatura.
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            display: "grid",
+            gap: 10,
+          }}
+        >
+          {(isPro
+            ? [
+                "Tudo do Starter",
+                "Melhor posicionamento comercial",
+                "Mais espaço para evolução do produto",
+              ]
+            : [
+                "Pipeline comercial por etapa",
+                "Follow-ups e histórico",
+                "1 usuário com acesso completo",
+              ]
+          ).map((item) => (
+            <div
+              key={item}
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+                color: "rgba(255,255,255,0.82)",
+                fontSize: 15,
+                lineHeight: 1.6,
+              }}
+            >
+              <span style={{ color: "#60a5fa", fontWeight: 900 }}>•</span>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            marginTop: 28,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            type="button"
+            onClick={props.onClose}
+            disabled={props.confirming}
+            style={{
+              flex: 1,
+              minWidth: 160,
+              padding: "15px 18px",
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.18)",
+              background: "transparent",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 15,
+              cursor: props.confirming ? "not-allowed" : "pointer",
+              opacity: props.confirming ? 0.7 : 1,
+            }}
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            onClick={props.onConfirm}
+            disabled={props.confirming}
+            style={{
+              flex: 2,
+              minWidth: 220,
+              padding: "15px 18px",
+              borderRadius: 16,
+              border: "none",
+              background: "#2563eb",
+              color: "#fff",
+              fontWeight: 900,
+              fontSize: 15,
+              cursor: props.confirming ? "not-allowed" : "pointer",
+              opacity: props.confirming ? 0.75 : 1,
+              boxShadow: "0 18px 40px rgba(37,99,235,0.28)",
+            }}
+          >
+            {props.confirming ? "Abrindo checkout..." : "Continuar para pagamento"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BillingClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -189,6 +396,7 @@ export default function BillingClient() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [submittingPlan, setSubmittingPlan] = useState<PlanKey | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanKey | null>(null);
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -265,6 +473,7 @@ export default function BillingClient() {
     } catch (error) {
       alert(error instanceof Error ? error.message : "Erro ao iniciar checkout.");
       setSubmittingPlan(null);
+      setSelectedPlan(null);
     }
   }
 
@@ -389,7 +598,7 @@ export default function BillingClient() {
               "Portal de assinatura incluso",
             ]}
             cta="Começar no Starter"
-            onClick={() => void goToCheckout("starter")}
+            onClick={() => setSelectedPlan("starter")}
             loading={submittingPlan === "starter"}
           />
 
@@ -404,7 +613,7 @@ export default function BillingClient() {
               "Prioridade natural em melhorias futuras",
             ]}
             cta="Assinar o Pro"
-            onClick={() => void goToCheckout("pro")}
+            onClick={() => setSelectedPlan("pro")}
             loading={submittingPlan === "pro"}
             highlighted
             badge="Mais recomendado"
@@ -429,6 +638,19 @@ export default function BillingClient() {
           />
         </div>
       </div>
+
+      {selectedPlan ? (
+        <PlanConfirmModal
+          plan={selectedPlan}
+          onClose={() => {
+            if (!submittingPlan) {
+              setSelectedPlan(null);
+            }
+          }}
+          onConfirm={() => void goToCheckout(selectedPlan)}
+          confirming={submittingPlan === selectedPlan}
+        />
+      ) : null}
     </div>
   );
 }
