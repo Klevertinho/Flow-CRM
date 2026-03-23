@@ -36,8 +36,33 @@ export async function POST(req: Request) {
       );
     }
 
+    const { data: existingSubscription, error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (subscriptionError) {
+      return NextResponse.json(
+        { error: "Erro ao verificar assinatura atual." },
+        { status: 500 }
+      );
+    }
+
+    if (existingSubscription) {
+      return NextResponse.json(
+        {
+          error: "Sua conta já possui uma assinatura ativa.",
+          redirectTo: "/app",
+        },
+        { status: 409 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const requestedPlan = body?.plan;
+
     const plan: PlanKey =
       requestedPlan === "pro" || requestedPlan === "starter"
         ? requestedPlan
