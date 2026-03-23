@@ -251,7 +251,7 @@ export default function BillingClientPage({
   useEffect(() => {
     if (initialStatus === "success" && hasActiveSubscription) {
       const timeout = setTimeout(() => {
-        window.location.href = "/";
+        window.location.href = "/app";
       }, 1200);
 
       return () => clearTimeout(timeout);
