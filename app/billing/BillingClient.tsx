@@ -196,7 +196,7 @@ function PlanConfirmModal(props: {
         inset: 0,
         zIndex: 999,
         background: "rgba(2,6,23,0.82)",
-        backdropFilter: "blur(6px)",
+        backdropFilter: "blur(8px)",
         display: "grid",
         placeItems: "center",
         padding: 20,
