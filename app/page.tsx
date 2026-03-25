@@ -512,7 +512,7 @@ export default async function LandingPage() {
             </>
           ) : (
             <>
-              <TopButton href="/login">Login</TopButton>
+              <TopButton href="/account">Login</TopButton>
               <TopButton href="#pricing" primary scroll>
                 Assinar
               </TopButton>
