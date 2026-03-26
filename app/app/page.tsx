@@ -1,217 +1,129 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Card, Input } from "@/components/ui";
 
-export default function BillingPage() {
-  const [loading, setLoading] = useState<string | null>(null);
+type Lead = {
+  id: number;
+  name: string;
+  status: string;
+};
 
-  async function handleCheckout(plan: string) {
-    try {
-      setLoading(plan);
+export default function DashboardPage() {
+  const [leads, setLeads] = useState<Lead[]>([
+    { id: 1, name: "João Silva", status: "Quente" },
+    { id: 2, name: "Maria Souza", status: "Frio" },
+  ]);
 
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        body: JSON.stringify({ plan }),
-      });
+  const [name, setName] = useState("");
 
-      const data = await res.json();
+  function addLead() {
+    if (!name) return;
 
-      if (!res.ok) throw new Error(data?.error);
+    setLeads([
+      ...leads,
+      {
+        id: Date.now(),
+        name,
+        status: "Novo",
+      },
+    ]);
 
-      window.location.href = data.url;
-    } catch (err: any) {
-      alert(err.message || "Erro ao iniciar checkout");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handlePortal() {
-    try {
-      setLoading("portal");
-
-      const res = await fetch("/api/customer-portal", {
-        method: "POST",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data?.error);
-
-      window.location.href = data.url;
-    } catch (err: any) {
-      alert(err.message || "Erro ao abrir portal");
-    } finally {
-      setLoading(null);
-    }
+    setName("");
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, rgba(47,107,255,0.15), transparent 40%), #0B1220",
-        color: "#E6EAF2",
-        padding: "60px 20px",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        {/* HEADER */}
-        <div style={{ marginBottom: 40 }}>
-          <div
-            style={{
-              fontSize: 12,
-              color: "#C6A85A",
-              fontWeight: 700,
-              letterSpacing: 1,
-            }}
-          >
-            VALORA CRM
-          </div>
-
-          <h1
-            style={{
-              fontSize: 42,
-              fontWeight: 900,
-              marginTop: 10,
-            }}
-          >
-            Escolha seu plano
-          </h1>
-
-          <p
-            style={{
-              marginTop: 10,
-              color: "rgba(230,234,242,0.6)",
-              maxWidth: 500,
-            }}
-          >
-            Comece simples e evolua conforme sua operação cresce.
-          </p>
-        </div>
-
-        {/* PLANOS */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))",
-            gap: 20,
-          }}
-        >
-          {/* STARTER */}
-          <div style={card}>
-            <h2 style={title}>Starter</h2>
-            <p style={price}>R$ 39/mês</p>
-
-            <ul style={list}>
-              <li>Pipeline comercial</li>
-              <li>Follow-ups</li>
-              <li>Histórico de leads</li>
-            </ul>
-
-            <button
-              style={buttonPrimary}
-              onClick={() => handleCheckout("starter")}
-              disabled={loading === "starter"}
-            >
-              {loading === "starter" ? "Carregando..." : "Começar"}
-            </button>
-          </div>
-
-          {/* PRO */}
-          <div style={{ ...card, border: "1px solid #2F6BFF" }}>
-            <div style={badge}>Mais recomendado</div>
-
-            <h2 style={title}>Pro</h2>
-            <p style={price}>R$ 79/mês</p>
-
-            <ul style={list}>
-              <li>Tudo do Starter</li>
-              <li>Melhor performance</li>
-              <li>Base para IA futura</li>
-            </ul>
-
-            <button
-              style={buttonBlue}
-              onClick={() => handleCheckout("pro")}
-              disabled={loading === "pro"}
-            >
-              {loading === "pro" ? "Carregando..." : "Assinar Pro"}
-            </button>
-          </div>
-        </div>
-
-        {/* PORTAL */}
-        <div
-          style={{
-            marginTop: 40,
-            padding: 20,
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            textAlign: "center",
-          }}
-        >
-          <p style={{ marginBottom: 10 }}>
-            Já possui assinatura?
-          </p>
-
-          <button style={buttonPrimary} onClick={handlePortal}>
-            Gerenciar assinatura
-          </button>
-        </div>
+    <div style={{ display: "grid", gap: 20 }}>
+      {/* HEADER */}
+      <div>
+        <h1 style={{ fontSize: 28, fontWeight: 900 }}>
+          Dashboard
+        </h1>
+        <p style={{ opacity: 0.6 }}>
+          Controle seus leads e acompanhe sua operação
+        </p>
       </div>
+
+      {/* STATS */}
+      <div
+        className="flowcrm-stats-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 16,
+        }}
+      >
+        <Card>
+          <div style={statLabel}>Leads ativos</div>
+          <div style={statValue}>{leads.length}</div>
+        </Card>
+
+        <Card>
+          <div style={statLabel}>Follow-ups</div>
+          <div style={statValue}>4</div>
+        </Card>
+
+        <Card>
+          <div style={statLabel}>Conversão</div>
+          <div style={statValue}>24%</div>
+        </Card>
+      </div>
+
+      {/* ADD LEAD */}
+      <Card>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Input
+            placeholder="Nome do lead"
+            value={name}
+            onChange={(e: any) => setName(e.target.value)}
+          />
+
+          <Button onClick={addLead}>
+            Adicionar
+          </Button>
+        </div>
+      </Card>
+
+      {/* LISTA */}
+      <Card>
+        <div style={{ display: "grid", gap: 12 }}>
+          {leads.map((lead) => (
+            <div
+              key={lead.id}
+              style={{
+                padding: 14,
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 700 }}>{lead.name}</div>
+                <div style={{ opacity: 0.5, fontSize: 12 }}>
+                  {lead.status}
+                </div>
+              </div>
+
+              <Button variant="ghost">
+                Ver
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
 
-const card = {
-  padding: 24,
-  borderRadius: 18,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
+const statLabel = {
+  fontSize: 13,
+  opacity: 0.6,
 };
 
-const title = {
-  fontSize: 22,
-  fontWeight: 800,
-};
-
-const price = {
-  fontSize: 26,
+const statValue = {
+  fontSize: 28,
   fontWeight: 900,
-  margin: "10px 0 20px",
-};
-
-const list = {
-  marginBottom: 20,
-  paddingLeft: 18,
-  lineHeight: 1.8,
-};
-
-const buttonPrimary = {
-  width: "100%",
-  padding: "12px",
-  borderRadius: 10,
-  border: "1px solid rgba(255,255,255,0.2)",
-  background: "transparent",
-  color: "#fff",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const buttonBlue = {
-  ...buttonPrimary,
-  background: "#2F6BFF",
-  border: "none",
-};
-
-const badge = {
-  background: "#2F6BFF",
-  padding: "4px 10px",
-  borderRadius: 8,
-  fontSize: 12,
-  marginBottom: 10,
-  display: "inline-block",
 };
