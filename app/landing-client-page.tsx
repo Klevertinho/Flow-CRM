@@ -530,17 +530,42 @@ export default function LandingClientPage() {
   const [activeMockTab, setActiveMockTab] = useState<"today" | "pipeline" | "ai">("today");
   const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
 
   const highlightedPlanFromQuery =
-    searchParams.get("plan") === "pro" ? "pro" : searchParams.get("plan") === "starter" ? "starter" : null;
+    searchParams.get("plan") === "pro"
+      ? "pro"
+      : searchParams.get("plan") === "starter"
+      ? "starter"
+      : null;
 
   const shouldOpenPlans =
     searchParams.get("plans") === "1" || searchParams.get("plan") !== null;
 
   useEffect(() => {
-    void supabase.auth.getUser().then(({ data }) => {
-      setIsLoggedIn(!!data.user);
-    });
+    async function loadSessionState() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setIsLoggedIn(!!user);
+
+      if (!user) {
+        setHasActiveSubscription(false);
+        return;
+      }
+
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      setHasActiveSubscription(!!subscription);
+    }
+
+    void loadSessionState();
   }, [supabase]);
 
   useEffect(() => {
@@ -847,10 +872,25 @@ export default function LandingClientPage() {
             flexWrap: "wrap",
           }}
         >
-          <HeaderButton href="/login">Login</HeaderButton>
-          <HeaderButton onClick={goToPricing} primary>
-            Ver planos
-          </HeaderButton>
+          {isLoggedIn ? (
+            <>
+              <HeaderButton href="/logout">Sair</HeaderButton>
+              <HeaderButton
+                href={hasActiveSubscription ? "/app" : undefined}
+                onClick={!hasActiveSubscription ? goToPricing : undefined}
+                primary
+              >
+                {hasActiveSubscription ? "Ir para o CRM" : "Ver planos"}
+              </HeaderButton>
+            </>
+          ) : (
+            <>
+              <HeaderButton href="/login">Login</HeaderButton>
+              <HeaderButton onClick={goToPricing} primary>
+                Ver planos
+              </HeaderButton>
+            </>
+          )}
         </div>
       </header>
 
@@ -906,9 +946,15 @@ export default function LandingClientPage() {
               Quero organizar minhas vendas
             </HeaderButton>
 
-            <HeaderButton href={isLoggedIn ? "/app" : "/login"}>
-              {isLoggedIn ? "Ir para o CRM" : "Já tenho conta"}
-            </HeaderButton>
+            {isLoggedIn ? (
+              hasActiveSubscription ? (
+                <HeaderButton href="/app">Ir para o CRM</HeaderButton>
+              ) : (
+                <HeaderButton href="/logout">Trocar de conta</HeaderButton>
+              )
+            ) : (
+              <HeaderButton href="/login">Já tenho conta</HeaderButton>
+            )}
           </div>
 
           <div
@@ -1442,9 +1488,16 @@ export default function LandingClientPage() {
               <HeaderButton onClick={goToPricing} primary>
                 Ver planos e começar
               </HeaderButton>
-              <HeaderButton href={isLoggedIn ? "/app" : "/login"}>
-                {isLoggedIn ? "Ir para o CRM" : "Já tenho conta"}
-              </HeaderButton>
+
+              {isLoggedIn ? (
+                hasActiveSubscription ? (
+                  <HeaderButton href="/app">Ir para o CRM</HeaderButton>
+                ) : (
+                  <HeaderButton href="/logout">Trocar de conta</HeaderButton>
+                )
+              ) : (
+                <HeaderButton href="/login">Já tenho conta</HeaderButton>
+              )}
             </div>
           </div>
         </GlassCard>

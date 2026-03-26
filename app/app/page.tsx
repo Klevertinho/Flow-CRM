@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "../../lib/supabase/server";
+import CRMClientPage from "./crm-client-page";
 
-export default async function AppPage() {
+export default async function CRMPage() {
   const supabase = await createClient();
 
-  // 🔒 1. pegar usuário primeiro
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -13,33 +13,26 @@ export default async function AppPage() {
     redirect("/login");
   }
 
-  // 🔒 2. depois buscar perfil
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("id, status")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!subscription) {
+    redirect("/?plans=1");
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("onboarding_completed")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  // 🔒 3. gate do onboarding
   if (!profile?.onboarding_completed) {
     redirect("/onboarding");
   }
 
-  // 🔒 (opcional mas recomendado) gate de assinatura
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .single();
-
-  if (!subscription) {
-    redirect("/billing");
-  }
-
-  return (
-    <div>
-      {/* seu CRM aqui */}
-    </div>
-  );
+  return <CRMClientPage />;
 }
