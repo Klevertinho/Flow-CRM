@@ -272,7 +272,8 @@ function StepCard({
       </div>
     </GlassCard>
   );
-}
+} 
+
 function BenefitCard({
   title,
   text,
@@ -323,6 +324,7 @@ function BenefitCard({
     </GlassCard>
   );
 }
+
 function PricingCard({
   title,
   price,
