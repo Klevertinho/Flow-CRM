@@ -24,6 +24,7 @@ export default function DashboardPage() {
   ]);
 
   const [name, setName] = useState("");
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   function addLead() {
     if (!name) return;
@@ -49,7 +50,11 @@ export default function DashboardPage() {
   function getInsight(hours: number) {
     if (hours < 6) return "Alta chance de fechamento";
     if (hours < 48) return "Momento ideal para follow-up";
-    return "Precisa reengajar";
+    return "Precisa reengajar com urgência";
+  }
+
+  function generateMessage(name: string) {
+    return `Fala ${name.split(" ")[0]}, tudo certo? Vi que você demonstrou interesse. Quer que eu te envie mais detalhes ou seguimos com a proposta?`;
   }
 
   return (
@@ -64,79 +69,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* TOP GRID */}
-      <div
-        className="flowcrm-stats-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: 20,
-        }}
-      >
-        {/* PRIORIDADE */}
-        <Card>
-          <div style={{ marginBottom: 12, fontWeight: 800 }}>
-            Prioridade do dia
-          </div>
-
-          {leads.slice(0, 2).map((lead) => {
-            const hours =
-              (Date.now() - lead.lastContact) /
-              (1000 * 60 * 60);
-
-            const score = getScore(hours);
-
-            return (
-              <div
-                key={lead.id}
-                style={{
-                  padding: 12,
-                  borderRadius: 10,
-                  marginBottom: 10,
-                  background: "rgba(47,107,255,0.1)",
-                }}
-              >
-                <div style={{ fontWeight: 700 }}>
-                  {lead.name}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: score.color,
-                  }}
-                >
-                  {score.label}
-                </div>
-
-                <div style={{ fontSize: 12, opacity: 0.6 }}>
-                  {getInsight(hours)}
-                </div>
-              </div>
-            );
-          })}
-        </Card>
-
-        {/* RESUMO */}
-        <Card>
-          <div style={{ marginBottom: 12, fontWeight: 800 }}>
-            Resumo
-          </div>
-
-          <div style={stat}>
-            Leads: <strong>{leads.length}</strong>
-          </div>
-
-          <div style={stat}>
-            Follow-ups: <strong>4</strong>
-          </div>
-
-          <div style={stat}>
-            Conversão: <strong>24%</strong>
-          </div>
-        </Card>
-      </div>
-
       {/* ADD */}
       <Card>
         <div style={{ display: "flex", gap: 10 }}>
@@ -145,14 +77,11 @@ export default function DashboardPage() {
             value={name}
             onChange={(e: any) => setName(e.target.value)}
           />
-
-          <Button onClick={addLead}>
-            Adicionar
-          </Button>
+          <Button onClick={addLead}>Adicionar</Button>
         </div>
       </Card>
 
-      {/* LISTA */}
+      {/* LEADS */}
       <Card>
         <div style={{ fontWeight: 800, marginBottom: 12 }}>
           Leads
@@ -194,7 +123,10 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <Button variant="ghost">
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedLead(lead)}
+                >
                   Abrir
                 </Button>
               </div>
@@ -202,11 +134,126 @@ export default function DashboardPage() {
           })}
         </div>
       </Card>
+
+      {/* DRAWER */}
+      {selectedLead && (
+        <div
+          onClick={() => setSelectedLead(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "flex-end",
+            zIndex: 50,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 420,
+              height: "100%",
+              background: "#020617",
+              padding: 24,
+              borderLeft: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              animation: "slideIn 0.2s ease",
+            }}
+          >
+            {/* HEADER */}
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 900 }}>
+                {selectedLead.name}
+              </div>
+            </div>
+
+            {/* STATUS */}
+            {(() => {
+              const hours =
+                (Date.now() - selectedLead.lastContact) /
+                (1000 * 60 * 60);
+
+              const score = getScore(hours);
+
+              return (
+                <div>
+                  <div style={{ fontSize: 12, opacity: 0.6 }}>
+                    Status
+                  </div>
+
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      color: score.color,
+                    }}
+                  >
+                    {score.label}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* INSIGHT */}
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                Insight
+              </div>
+
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 10,
+                  background: "rgba(47,107,255,0.1)",
+                  fontSize: 14,
+                }}
+              >
+                {getInsight(
+                  (Date.now() - selectedLead.lastContact) /
+                    (1000 * 60 * 60)
+                )}
+              </div>
+            </div>
+
+            {/* MENSAGEM */}
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                Sugestão de mensagem
+              </div>
+
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 10,
+                  background: "rgba(255,255,255,0.05)",
+                  fontSize: 14,
+                }}
+              >
+                {generateMessage(selectedLead.name)}
+              </div>
+            </div>
+
+            {/* ACTION */}
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  generateMessage(selectedLead.name)
+                );
+              }}
+            >
+              Copiar mensagem
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={() => setSelectedLead(null)}
+            >
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-const stat = {
-  marginBottom: 8,
-  opacity: 0.7,
-};
