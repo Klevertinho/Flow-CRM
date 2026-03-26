@@ -2,7 +2,18 @@ import { redirect } from "next/navigation";
 import { createClient } from "../../lib/supabase/server";
 import LoginClientPage from "./login-client-page";
 
-export default async function LoginPage() {
+type SearchParams = {
+  plan?: string;
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams>;
+}) {
+  const params = (await searchParams) || {};
+  const plan = params.plan === "pro" ? "pro" : "starter";
+
   const supabase = await createClient();
 
   const {
@@ -21,7 +32,7 @@ export default async function LoginPage() {
       redirect("/app");
     }
 
-    redirect("/billing");
+    redirect(`/?plans=1&plan=${plan}`);
   }
 
   return <LoginClientPage />;

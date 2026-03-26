@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
-type BillingCycle = "monthly" | "yearly";
+type Plan = "starter" | "pro";
 
 function HeaderButton({
   href,
@@ -286,6 +288,8 @@ function PricingCard({
   badge,
   onClick,
   footnote,
+  isHighlightedByQuery,
+  loading,
 }: {
   title: string;
   price: string;
@@ -296,147 +300,168 @@ function PricingCard({
   badge?: string;
   onClick: () => void;
   footnote?: string;
+  isHighlightedByQuery?: boolean;
+  loading?: boolean;
 }) {
   return (
-    <GlassCard highlighted={highlighted}>
-      {badge ? (
+    <div
+      style={{
+        transform: isHighlightedByQuery ? "scale(1.02)" : "scale(1)",
+        transition: "transform .25s ease",
+      }}
+    >
+      <GlassCard highlighted={highlighted || isHighlightedByQuery}>
+        {badge ? (
+          <div
+            style={{
+              display: "inline-flex",
+              padding: "8px 14px",
+              borderRadius: 999,
+              background:
+                highlighted || isHighlightedByQuery
+                  ? "#2563eb"
+                  : "rgba(255,255,255,0.08)",
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: 12,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              marginBottom: 16,
+            }}
+          >
+            {badge}
+          </div>
+        ) : null}
+
         <div
           style={{
-            display: "inline-flex",
-            padding: "8px 14px",
-            borderRadius: 999,
-            background: highlighted ? "#2563eb" : "rgba(255,255,255,0.08)",
+            fontSize: 30,
+            fontWeight: 900,
             color: "#fff",
-            fontWeight: 800,
-            fontSize: 12,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            marginBottom: 12,
+            letterSpacing: -0.8,
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 8,
+            flexWrap: "wrap",
             marginBottom: 16,
           }}
         >
-          {badge}
-        </div>
-      ) : null}
-
-      <div
-        style={{
-          fontSize: 30,
-          fontWeight: 900,
-          color: "#fff",
-          marginBottom: 12,
-          letterSpacing: -0.8,
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 8,
-          flexWrap: "wrap",
-          marginBottom: 16,
-        }}
-      >
-        <span
-          style={{
-            fontSize: price === "Sob consulta" ? 34 : 50,
-            lineHeight: 1,
-            fontWeight: 900,
-            color: "#fff",
-            letterSpacing: -1.3,
-          }}
-        >
-          {price}
-        </span>
-
-        {price !== "Sob consulta" ? (
           <span
             style={{
-              color: "rgba(255,255,255,0.55)",
-              fontWeight: 700,
-              fontSize: 15,
+              fontSize: price === "Sob consulta" ? 34 : 50,
+              lineHeight: 1,
+              fontWeight: 900,
+              color: "#fff",
+              letterSpacing: -1.3,
             }}
           >
-            /mês
+            {price}
           </span>
-        ) : null}
-      </div>
 
-      <p
-        style={{
-          color: "rgba(255,255,255,0.70)",
-          lineHeight: 1.8,
-          fontSize: 15,
-          minHeight: 84,
-          margin: 0,
-        }}
-      >
-        {subtitle}
-      </p>
+          {price !== "Sob consulta" ? (
+            <span
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                fontWeight: 700,
+                fontSize: 15,
+              }}
+            >
+              /mês
+            </span>
+          ) : null}
+        </div>
 
-      <div style={{ display: "grid", gap: 11, marginTop: 24 }}>
-        {features.map((feature) => (
-          <div
-            key={feature}
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "flex-start",
-              color: "rgba(255,255,255,0.82)",
-              lineHeight: 1.6,
-              fontSize: 15,
-            }}
-          >
-            <span style={{ color: "#60a5fa", fontWeight: 900 }}>•</span>
-            <span>{feature}</span>
-          </div>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={onClick}
-        style={{
-          marginTop: 28,
-          width: "100%",
-          minHeight: 54,
-          borderRadius: 16,
-          border: highlighted ? "none" : "1px solid rgba(255,255,255,0.14)",
-          background: highlighted
-            ? "linear-gradient(135deg,#3b82f6 0%, #2563eb 100%)"
-            : "rgba(255,255,255,0.05)",
-          color: "#fff",
-          fontWeight: 900,
-          fontSize: 15,
-          cursor: "pointer",
-          boxShadow: highlighted ? "0 20px 50px rgba(37,99,235,0.26)" : "none",
-          transition: "transform .18s ease, box-shadow .18s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-        }}
-      >
-        {cta}
-      </button>
-
-      {footnote ? (
-        <div
+        <p
           style={{
-            marginTop: 12,
-            color: "rgba(255,255,255,0.45)",
-            fontSize: 12,
-            textAlign: "center",
+            color: "rgba(255,255,255,0.70)",
+            lineHeight: 1.8,
+            fontSize: 15,
+            minHeight: 84,
+            margin: 0,
           }}
         >
-          {footnote}
+          {subtitle}
+        </p>
+
+        <div style={{ display: "grid", gap: 11, marginTop: 24 }}>
+          {features.map((feature) => (
+            <div
+              key={feature}
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+                color: "rgba(255,255,255,0.82)",
+                lineHeight: 1.6,
+                fontSize: 15,
+              }}
+            >
+              <span style={{ color: "#60a5fa", fontWeight: 900 }}>•</span>
+              <span>{feature}</span>
+            </div>
+          ))}
         </div>
-      ) : null}
-    </GlassCard>
+
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={loading}
+          style={{
+            marginTop: 28,
+            width: "100%",
+            minHeight: 54,
+            borderRadius: 16,
+            border:
+              highlighted || isHighlightedByQuery
+                ? "none"
+                : "1px solid rgba(255,255,255,0.14)",
+            background:
+              highlighted || isHighlightedByQuery
+                ? "linear-gradient(135deg,#3b82f6 0%, #2563eb 100%)"
+                : "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontWeight: 900,
+            fontSize: 15,
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow:
+              highlighted || isHighlightedByQuery
+                ? "0 20px 50px rgba(37,99,235,0.26)"
+                : "none",
+            opacity: loading ? 0.7 : 1,
+            transition: "transform .18s ease, box-shadow .18s ease",
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+          }}
+        >
+          {loading ? "Carregando..." : cta}
+        </button>
+
+        {footnote ? (
+          <div
+            style={{
+              marginTop: 12,
+              color: "rgba(255,255,255,0.45)",
+              fontSize: 12,
+              textAlign: "center",
+            }}
+          >
+            {footnote}
+          </div>
+        ) : null}
+      </GlassCard>
+    </div>
   );
 }
 
@@ -497,19 +522,38 @@ function FaqItem({
 }
 
 export default function LandingPage() {
-  const [billingCycle] = useState<BillingCycle>("monthly");
+  const supabase = createClient();
+  const searchParams = useSearchParams();
+
   const pricingRef = useRef<HTMLElement | null>(null);
   const [pricingPulse, setPricingPulse] = useState(false);
   const [activeMockTab, setActiveMockTab] = useState<"today" | "pipeline" | "ai">("today");
+  const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  const starterPrice = billingCycle === "monthly" ? "R$ 39" : "R$ 31";
-  const proPrice = billingCycle === "monthly" ? "R$ 79" : "R$ 63";
+  const highlightedPlanFromQuery =
+    searchParams.get("plan") === "pro" ? "pro" : searchParams.get("plan") === "starter" ? "starter" : null;
 
-  const goToPricing = () => {
-    pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setPricingPulse(true);
-    window.setTimeout(() => setPricingPulse(false), 1100);
-  };
+  const shouldOpenPlans =
+    searchParams.get("plans") === "1" || searchParams.get("plan") !== null;
+
+  useEffect(() => {
+    void supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(!!data.user);
+    });
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!shouldOpenPlans) return;
+
+    const timeout = window.setTimeout(() => {
+      pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setPricingPulse(true);
+      window.setTimeout(() => setPricingPulse(false), 1200);
+    }, 180);
+
+    return () => window.clearTimeout(timeout);
+  }, [shouldOpenPlans]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -522,6 +566,56 @@ export default function LandingPage() {
 
     return () => window.clearInterval(interval);
   }, []);
+
+  async function handlePlanClick(plan: Plan) {
+    try {
+      setLoadingPlan(plan);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        window.location.href = `/signup?plan=${plan}`;
+        return;
+      }
+
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 409) {
+        window.location.href = data?.redirectTo || "/billing";
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Erro ao iniciar checkout.");
+      }
+
+      if (!data?.url) {
+        throw new Error("Checkout sem URL.");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erro ao iniciar checkout.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
+  const goToPricing = () => {
+    pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setPricingPulse(true);
+    window.setTimeout(() => setPricingPulse(false), 1100);
+  };
 
   const mockContent = useMemo(() => {
     if (activeMockTab === "today") {
@@ -812,7 +906,9 @@ export default function LandingPage() {
               Quero organizar minhas vendas
             </HeaderButton>
 
-            <HeaderButton href="/login">Já tenho conta</HeaderButton>
+            <HeaderButton href={isLoggedIn ? "/app" : "/login"}>
+              {isLoggedIn ? "Ir para o CRM" : "Já tenho conta"}
+            </HeaderButton>
           </div>
 
           <div
@@ -1170,7 +1266,7 @@ export default function LandingPage() {
               lineHeight: 1.8,
             }}
           >
-            Você não precisa de um sistema “complexo”. Precisa de um sistema que te faça vender melhor, com menos desperdício e mais controle.
+            Você não precisa de um sistema complexo. Precisa de um sistema que te faça vender melhor, com menos desperdício e mais controle.
           </p>
         </div>
 
@@ -1184,7 +1280,7 @@ export default function LandingPage() {
         >
           <PricingCard
             title="Starter"
-            price={starterPrice}
+            price="R$ 39"
             subtitle="Para quem quer sair do caos e começar a organizar leads, follow-ups e rotina de vendas sem complicação."
             features={[
               "1 conta com acesso completo",
@@ -1193,15 +1289,15 @@ export default function LandingPage() {
               "Base pronta para crescer com o produto",
             ]}
             cta="Começar no Starter"
-            onClick={() => {
-              window.location.href = "/signup";
-            }}
+            onClick={() => void handlePlanClick("starter")}
             footnote="Ideal para operação individual"
+            isHighlightedByQuery={highlightedPlanFromQuery === "starter"}
+            loading={loadingPlan === "starter"}
           />
 
           <PricingCard
             title="Pro"
-            price={proPrice}
+            price="R$ 79"
             subtitle="Para quem quer mais percepção de valor, mais estrutura comercial e um plano melhor para crescer sem improviso."
             features={[
               "Tudo do Starter",
@@ -1212,10 +1308,10 @@ export default function LandingPage() {
             cta="Assinar o Pro"
             highlighted
             badge="Mais recomendado"
-            onClick={() => {
-              window.location.href = "/signup";
-            }}
+            onClick={() => void handlePlanClick("pro")}
             footnote="Mais escolhido por quem quer crescer"
+            isHighlightedByQuery={highlightedPlanFromQuery === "pro"}
+            loading={loadingPlan === "pro"}
           />
 
           <PricingCard
@@ -1346,7 +1442,9 @@ export default function LandingPage() {
               <HeaderButton onClick={goToPricing} primary>
                 Ver planos e começar
               </HeaderButton>
-              <HeaderButton href="/login">Já tenho conta</HeaderButton>
+              <HeaderButton href={isLoggedIn ? "/app" : "/login"}>
+                {isLoggedIn ? "Ir para o CRM" : "Já tenho conta"}
+              </HeaderButton>
             </div>
           </div>
         </GlassCard>
