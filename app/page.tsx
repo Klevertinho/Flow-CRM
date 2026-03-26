@@ -7,7 +7,7 @@ function TopButton(props: {
   primary?: boolean;
   scroll?: boolean;
 }) {
-  const sharedStyle: React.CSSProperties = {
+  const sharedStyle = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -26,37 +26,18 @@ function TopButton(props: {
       ? "0 18px 40px rgba(37,99,235,0.28)"
       : "none",
     transition: "all .2s ease",
-  };
+  } as const;
 
   if (props.scroll) {
     return (
-      <a
-        href={props.href}
-        data-scroll-pricing="true"
-        style={sharedStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0px)";
-        }}
-      >
+      <a href={props.href} data-scroll-pricing="true" style={sharedStyle}>
         {props.children}
       </a>
     );
   }
 
   return (
-    <Link
-      href={props.href}
-      style={sharedStyle}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0px)";
-      }}
-    >
+    <Link href={props.href} style={sharedStyle}>
       {props.children}
     </Link>
   );
