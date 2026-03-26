@@ -6,13 +6,21 @@ import { Button, Card, Input } from "@/components/ui";
 type Lead = {
   id: number;
   name: string;
-  status: string;
+  lastContact: number; // timestamp
 };
 
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([
-    { id: 1, name: "João Silva", status: "Quente" },
-    { id: 2, name: "Maria Souza", status: "Frio" },
+    {
+      id: 1,
+      name: "João Silva",
+      lastContact: Date.now() - 1000 * 60 * 60 * 2, // 2h atrás
+    },
+    {
+      id: 2,
+      name: "Maria Souza",
+      lastContact: Date.now() - 1000 * 60 * 60 * 24 * 3, // 3 dias
+    },
   ]);
 
   const [name, setName] = useState("");
@@ -25,11 +33,38 @@ export default function DashboardPage() {
       {
         id: Date.now(),
         name,
-        status: "Novo",
+        lastContact: Date.now(),
       },
     ]);
 
     setName("");
+  }
+
+  function getLeadScore(lead: Lead) {
+    const hours =
+      (Date.now() - lead.lastContact) / (1000 * 60 * 60);
+
+    if (hours < 6) return { label: "Quente", color: "#22c55e" };
+    if (hours < 48) return { label: "Morno", color: "#facc15" };
+
+    return { label: "Frio", color: "#ef4444" };
+  }
+
+  function getNextAction(lead: Lead) {
+    const hours =
+      (Date.now() - lead.lastContact) / (1000 * 60 * 60);
+
+    if (hours < 6) return "Acompanhar resposta";
+    if (hours < 48) return "Enviar follow-up";
+
+    return "Reengajar lead";
+  }
+
+  function getPriority(lead: Lead) {
+    const hours =
+      (Date.now() - lead.lastContact) / (1000 * 60 * 60);
+
+    return hours > 24;
   }
 
   return (
@@ -37,10 +72,10 @@ export default function DashboardPage() {
       {/* HEADER */}
       <div>
         <h1 style={{ fontSize: 28, fontWeight: 900 }}>
-          Dashboard
+          Dashboard Inteligente
         </h1>
         <p style={{ opacity: 0.6 }}>
-          Controle seus leads e acompanhe sua operação
+          O sistema te mostra o que fazer agora
         </p>
       </div>
 
@@ -54,22 +89,26 @@ export default function DashboardPage() {
         }}
       >
         <Card>
-          <div style={statLabel}>Leads ativos</div>
+          <div style={statLabel}>Leads</div>
           <div style={statValue}>{leads.length}</div>
         </Card>
 
         <Card>
-          <div style={statLabel}>Follow-ups</div>
-          <div style={statValue}>4</div>
+          <div style={statLabel}>Alta prioridade</div>
+          <div style={statValue}>
+            {leads.filter(getPriority).length}
+          </div>
         </Card>
 
         <Card>
-          <div style={statLabel}>Conversão</div>
-          <div style={statValue}>24%</div>
+          <div style={statLabel}>Ações hoje</div>
+          <div style={statValue}>
+            {leads.filter(getPriority).length}
+          </div>
         </Card>
       </div>
 
-      {/* ADD LEAD */}
+      {/* ADD */}
       <Card>
         <div style={{ display: "flex", gap: 10 }}>
           <Input
@@ -78,40 +117,61 @@ export default function DashboardPage() {
             onChange={(e: any) => setName(e.target.value)}
           />
 
-          <Button onClick={addLead}>
-            Adicionar
-          </Button>
+          <Button onClick={addLead}>Adicionar</Button>
         </div>
       </Card>
 
-      {/* LISTA */}
+      {/* LEADS */}
       <Card>
         <div style={{ display: "grid", gap: 12 }}>
-          {leads.map((lead) => (
-            <div
-              key={lead.id}
-              style={{
-                padding: 14,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 700 }}>{lead.name}</div>
-                <div style={{ opacity: 0.5, fontSize: 12 }}>
-                  {lead.status}
-                </div>
-              </div>
+          {leads.map((lead) => {
+            const score = getLeadScore(lead);
+            const action = getNextAction(lead);
+            const priority = getPriority(lead);
 
-              <Button variant="ghost">
-                Ver
-              </Button>
-            </div>
-          ))}
+            return (
+              <div
+                key={lead.id}
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  background: priority
+                    ? "rgba(47,107,255,0.12)"
+                    : "rgba(255,255,255,0.03)",
+                  border: priority
+                    ? "1px solid #2F6BFF"
+                    : "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>
+                    {lead.name}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: score.color,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {score.label}
+                  </div>
+
+                  <div style={{ fontSize: 12, opacity: 0.6 }}>
+                    {action}
+                  </div>
+                </div>
+
+                <Button variant="ghost">
+                  Ver
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </Card>
     </div>
