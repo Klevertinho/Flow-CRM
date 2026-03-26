@@ -3,12 +3,17 @@
 import { useState } from "react";
 import { Button, Card, Input } from "@/components/ui";
 
+type HistoryItem = {
+  text: string;
+  time: number;
+};
+
 type Lead = {
   id: number;
   name: string;
   createdAt: number;
   lastContact: number;
-  history: { text: string; time: number }[];
+  history: HistoryItem[];
 };
 
 export default function DashboardPage() {
@@ -19,15 +24,21 @@ export default function DashboardPage() {
       createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2,
       lastContact: Date.now() - 1000 * 60 * 60 * 2,
       history: [
-        { text: "Lead criado", time: Date.now() - 1000 * 60 * 60 * 24 * 2 },
-        { text: "Pediu orçamento", time: Date.now() - 1000 * 60 * 60 * 5 },
-        { text: "Interesse alto", time: Date.now() - 1000 * 60 * 60 * 2 },
+        {
+          text: "Lead criado",
+          time: Date.now() - 1000 * 60 * 60 * 24 * 2,
+        },
+        {
+          text: "Pediu orçamento",
+          time: Date.now() - 1000 * 60 * 60 * 5,
+        },
       ],
     },
   ]);
 
   const [name, setName] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [note, setNote] = useState("");
 
   function addLead() {
     if (!name) return;
@@ -42,6 +53,33 @@ export default function DashboardPage() {
 
     setLeads([...leads, newLead]);
     setName("");
+  }
+
+  function addNote() {
+    if (!note || !selectedLead) return;
+
+    const updatedLeads = leads.map((lead) => {
+      if (lead.id === selectedLead.id) {
+        return {
+          ...lead,
+          lastContact: Date.now(),
+          history: [
+            ...lead.history,
+            { text: note, time: Date.now() },
+          ],
+        };
+      }
+      return lead;
+    });
+
+    setLeads(updatedLeads);
+
+    const updated = updatedLeads.find(
+      (l) => l.id === selectedLead.id
+    )!;
+
+    setSelectedLead(updated);
+    setNote("");
   }
 
   function getScore(hours: number) {
@@ -61,21 +99,21 @@ export default function DashboardPage() {
 
     if (diff < 1) return "agora";
     if (diff < 24) return `${diff}h atrás`;
-
     return `${Math.floor(diff / 24)}d atrás`;
   }
 
   function generateMessage(name: string) {
-    return `Fala ${name.split(" ")[0]}, tudo certo? Posso te ajudar a avançar com isso?`;
+    return `Fala ${name.split(" ")[0]}, tudo certo? Podemos avançar nisso?`;
   }
 
   return (
     <div style={{ display: "grid", gap: 24 }}>
+      {/* HEADER */}
       <h1 style={{ fontSize: 32, fontWeight: 900 }}>
         CRM Inteligente
       </h1>
 
-      {/* ADD */}
+      {/* ADD LEAD */}
       <Card>
         <div style={{ display: "flex", gap: 10 }}>
           <Input
@@ -153,6 +191,7 @@ export default function DashboardPage() {
               overflowY: "auto",
             }}
           >
+            {/* HEADER */}
             <h2 style={{ fontWeight: 900 }}>
               {selectedLead.name}
             </h2>
@@ -184,7 +223,6 @@ export default function DashboardPage() {
                     style={{
                       display: "flex",
                       gap: 10,
-                      alignItems: "flex-start",
                     }}
                   >
                     <div
@@ -198,16 +236,8 @@ export default function DashboardPage() {
                     />
 
                     <div>
-                      <div style={{ fontSize: 14 }}>
-                        {item.text}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 12,
-                          opacity: 0.5,
-                        }}
-                      >
+                      <div>{item.text}</div>
+                      <div style={{ fontSize: 12, opacity: 0.5 }}>
                         {formatTime(item.time)}
                       </div>
                     </div>
@@ -216,10 +246,30 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* MENSAGEM */}
+            {/* ADD NOTE */}
             <div>
               <div style={{ fontSize: 12, opacity: 0.6 }}>
-                Sugestão de mensagem
+                Nova nota
+              </div>
+
+              <Input
+                placeholder="Digite uma interação..."
+                value={note}
+                onChange={(e: any) => setNote(e.target.value)}
+              />
+
+              <Button
+                style={{ marginTop: 10 }}
+                onClick={addNote}
+              >
+                Salvar nota
+              </Button>
+            </div>
+
+            {/* MESSAGE */}
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                Sugestão
               </div>
 
               <div
