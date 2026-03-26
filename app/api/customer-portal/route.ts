@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { createClient } from "../../../lib/supabase/server";
-
-const secretKey = process.env.STRIPE_SECRET_KEY!;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+import { stripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
   try {
@@ -21,23 +18,21 @@ export async function POST() {
       );
     }
 
-    const { data: subscription, error: subscriptionError } = await supabase
+    const { data: subscription } = await supabase
       .from("subscriptions")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, status")
       .eq("user_id", user.id)
       .eq("status", "active")
       .maybeSingle();
 
-    if (subscriptionError || !subscription?.stripe_customer_id) {
+    if (!subscription?.stripe_customer_id) {
       return NextResponse.json(
         { error: "Assinatura ativa não encontrada." },
         { status: 404 }
       );
     }
 
-    const stripe = new Stripe(secretKey, {
-      apiVersion: "2026-02-25.clover",
-    });
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,

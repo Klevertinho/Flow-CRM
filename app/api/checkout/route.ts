@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import { createClient } from "../../../lib/supabase/server";
-
-const secretKey = process.env.STRIPE_SECRET_KEY!;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+import { stripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const PLAN_CONFIG = {
   starter: {
-    name: "FlowCRM Starter",
+    name: "VALORA CRM Starter",
     price: 3900,
-    description: "CRM leve para organizar leads e follow-ups",
+    description: "Plano Starter do VALORA CRM",
   },
   pro: {
-    name: "FlowCRM Pro",
+    name: "VALORA CRM Pro",
     price: 7900,
-    description: "Plano com mais percepção de valor e evolução do produto",
+    description: "Plano Pro do VALORA CRM",
   },
 } as const;
 
@@ -36,65 +34,79 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: existingSubscription, error: subscriptionError } = await supabase
+    const body = await req.json().catch(() => ({}));
+    const requestedPlan = body?.plan;
+
+    const plan: PlanKey =
+      requestedPlan === "starter" || requestedPlan === "pro"
+        ? requestedPlan
+        : "starter";
+
+    const { data: activeSubscription } = await supabase
       .from("subscriptions")
       .select("id, status")
       .eq("user_id", user.id)
       .eq("status", "active")
       .maybeSingle();
 
-    if (subscriptionError) {
-      return NextResponse.json(
-        { error: "Erro ao verificar assinatura atual." },
-        { status: 500 }
-      );
-    }
-
-    if (existingSubscription) {
+    if (activeSubscription) {
       return NextResponse.json(
         {
-          error: "Sua conta já possui uma assinatura ativa.",
-          redirectTo: "/app",
+          error: "Sua conta já possui assinatura ativa.",
+          redirectTo: "/billing",
         },
         { status: 409 }
       );
     }
 
-    const body = await req.json().catch(() => ({}));
-    const requestedPlan = body?.plan;
+    const { data: existingSubscription } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", user.id)
+      .not("stripe_customer_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const plan: PlanKey =
-      requestedPlan === "pro" || requestedPlan === "starter"
-        ? requestedPlan
-        : "starter";
+    let customerId = existingSubscription?.stripe_customer_id || null;
 
-    const stripe = new Stripe(secretKey, {
-      apiVersion: "2026-02-25.clover",
-    });
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email || undefined,
+        metadata: {
+          user_id: user.id,
+        },
+      });
+
+      customerId = customer.id;
+    }
 
     const selectedPlan = PLAN_CONFIG[plan];
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      customer: customerId,
       success_url: `${siteUrl}/billing?status=success`,
       cancel_url: `${siteUrl}/billing?status=cancel`,
-      customer_email: user.email,
       line_items: [
         {
           price_data: {
             currency: "brl",
-            product_data: {
-              name: selectedPlan.name,
-              description: selectedPlan.description,
-            },
             unit_amount: selectedPlan.price,
             recurring: {
               interval: "month",
+            },
+            product_data: {
+              name: selectedPlan.name,
+              description: selectedPlan.description,
             },
           },
           quantity: 1,
         },
       ],
+      allow_promotion_codes: true,
+      billing_address_collection: "auto",
       metadata: {
         user_id: user.id,
         plan,
@@ -106,6 +118,20 @@ export async function POST(req: Request) {
         },
       },
     });
+
+    await supabaseAdmin.from("subscriptions").upsert(
+      {
+        user_id: user.id,
+        stripe_customer_id: customerId,
+        plan,
+        status: "pending",
+        checkout_session_id: session.id,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

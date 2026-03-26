@@ -5,8 +5,8 @@ import { Button, Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
 type Subscription = {
-  plan: string;
-  status: string;
+  plan: string | null;
+  status: string | null;
   current_period_end: string | null;
 };
 
@@ -14,39 +14,59 @@ export default function BillingPage() {
   const supabase = createClient();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    loadSubscription();
+    void loadSubscription();
+
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+
+    if (status === "success") {
+      setMessage("Pagamento confirmado. Sua assinatura já está ativa ou em atualização.");
+    }
+
+    if (status === "cancel") {
+      setMessage("Pagamento cancelado. Você pode tentar novamente quando quiser.");
+    }
   }, []);
 
   async function loadSubscription() {
+    setLoading(true);
+
     const { data } = await supabase
       .from("subscriptions")
-      .select("*")
-      .eq("status", "active")
-      .single();
+      .select("plan, status, current_period_end")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (data) {
-      setSubscription(data);
-    }
+    setSubscription(data || null);
+    setLoading(false);
   }
 
   async function handlePortal() {
-    setLoadingPortal(true);
-
     try {
-      const res = await fetch("/api/portal", { method: "POST" });
+      setLoadingPortal(true);
+
+      const res = await fetch("/api/customer-portal", {
+        method: "POST",
+      });
+
       const data = await res.json();
 
-      if (data?.url) {
-        window.location.href = data.url;
+      if (!res.ok) {
+        throw new Error(data?.error || "Erro ao abrir portal.");
       }
-    } catch (e) {
-      console.error(e);
-    }
 
-    setLoadingPortal(false);
+      window.location.href = data.url;
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Erro ao abrir portal.");
+    } finally {
+      setLoadingPortal(false);
+    }
   }
 
   function formatDate(date: string | null) {
@@ -54,11 +74,34 @@ export default function BillingPage() {
     return new Date(date).toLocaleDateString("pt-BR");
   }
 
+  function planLabel(plan: string | null) {
+    if (plan === "pro") return "Pro";
+    if (plan === "starter") return "Starter";
+    return "—";
+  }
+
+  function statusLabel(status: string | null) {
+    if (status === "active") return "Ativa";
+    if (status === "trialing") return "Em teste";
+    if (status === "past_due") return "Pagamento pendente";
+    if (status === "canceled") return "Cancelada";
+    if (status === "pending") return "Processando";
+    return "Sem assinatura";
+  }
+
+  function statusColor(status: string | null) {
+    if (status === "active") return "#22c55e";
+    if (status === "trialing") return "#60a5fa";
+    if (status === "pending") return "#facc15";
+    if (status === "past_due") return "#f97316";
+    if (status === "canceled") return "#f87171";
+    return "#94a3b8";
+  }
+
   return (
-    <div style={{ display: "grid", gap: 28, maxWidth: 1000 }}>
-      {/* HEADER */}
+    <div style={{ display: "grid", gap: 24, maxWidth: 1040 }}>
       <Card>
-        <div style={{ maxWidth: 600 }}>
+        <div style={{ maxWidth: 720 }}>
           <div
             style={{
               fontSize: 12,
@@ -68,7 +111,7 @@ export default function BillingPage() {
               marginBottom: 10,
             }}
           >
-            Minha conta
+            Minha assinatura
           </div>
 
           <h1
@@ -79,140 +122,202 @@ export default function BillingPage() {
               marginBottom: 10,
             }}
           >
-            Sua assinatura
+            Controle sua assinatura com clareza
           </h1>
 
           <p
             style={{
-              color: "rgba(255,255,255,0.65)",
+              color: "rgba(255,255,255,0.66)",
               lineHeight: 1.8,
               fontSize: 16,
+              margin: 0,
             }}
           >
-            Gerencie seu plano, acompanhe sua cobrança e mantenha sua operação ativa.
+            Aqui você acompanha o status do seu plano, próxima cobrança e abre o portal seguro da Stripe para atualizar pagamento, trocar cartão ou cancelar.
           </p>
         </div>
       </Card>
 
-      {/* STATUS DA ASSINATURA */}
-      <Card>
-        <div style={{ display: "grid", gap: 20 }}>
-          <div>
-            <div
-              style={{
-                fontSize: 12,
-                color: "rgba(255,255,255,0.45)",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                marginBottom: 6,
-              }}
-            >
-              Plano atual
-            </div>
-
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 900,
-              }}
-            >
-              {subscription?.plan || "Starter"}
-            </div>
-          </div>
-
+      {message ? (
+        <Card>
           <div
             style={{
-              display: "flex",
-              gap: 30,
-              flexWrap: "wrap",
+              color: "rgba(255,255,255,0.82)",
+              lineHeight: 1.8,
             }}
           >
-            <div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.45)",
-                  marginBottom: 6,
-                }}
-              >
-                Status
+            {message}
+          </div>
+        </Card>
+      ) : null}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.2fr 0.8fr",
+          gap: 20,
+        }}
+      >
+        <Card>
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+                gap: 14,
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.45)",
+                    textTransform: "uppercase",
+                    fontWeight: 800,
+                    marginBottom: 6,
+                  }}
+                >
+                  Plano
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 900,
+                  }}
+                >
+                  {loading ? "..." : planLabel(subscription?.plan || null)}
+                </div>
               </div>
 
-              <div
-                style={{
-                  fontWeight: 800,
-                  color:
-                    subscription?.status === "active"
-                      ? "#22c55e"
-                      : "#f87171",
-                }}
-              >
-                {subscription?.status === "active"
-                  ? "Ativo"
-                  : "Inativo"}
+              <div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.45)",
+                    textTransform: "uppercase",
+                    fontWeight: 800,
+                    marginBottom: 6,
+                  }}
+                >
+                  Status
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 900,
+                    color: statusColor(subscription?.status || null),
+                  }}
+                >
+                  {loading ? "..." : statusLabel(subscription?.status || null)}
+                </div>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.45)",
+                    textTransform: "uppercase",
+                    fontWeight: 800,
+                    marginBottom: 6,
+                  }}
+                >
+                  Próxima cobrança
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 900,
+                  }}
+                >
+                  {loading
+                    ? "..."
+                    : formatDate(subscription?.current_period_end || null)}
+                </div>
               </div>
             </div>
 
-            <div>
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.45)",
-                  marginBottom: 6,
-                }}
-              >
-                Próxima cobrança
-              </div>
-
-              <div style={{ fontWeight: 800 }}>
-                {formatDate(subscription?.current_period_end || null)}
-              </div>
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 16,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.68)",
+                lineHeight: 1.8,
+              }}
+            >
+              Seu pagamento é processado com segurança via Stripe. Você pode atualizar cartão, consultar cobrança, trocar método de pagamento e cancelar sem burocracia.
             </div>
           </div>
+        </Card>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-            <Button onClick={handlePortal} disabled={loadingPortal}>
-              {loadingPortal ? "Carregando..." : "Gerenciar assinatura"}
+        <Card>
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+            }}
+          >
+            <Button onClick={handlePortal} disabled={loadingPortal || !subscription}>
+              {loadingPortal ? "Abrindo..." : "Gerenciar assinatura"}
             </Button>
 
             <Button
               variant="secondary"
-              onClick={() => (window.location.href = "/")}
+              onClick={() => {
+                window.location.href = "/";
+              }}
             >
-              Ver planos
+              Ver landing
+            </Button>
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                window.location.href = "/app";
+              }}
+            >
+              Voltar para o CRM
             </Button>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
-      {/* CONFIANÇA */}
       <Card>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 20,
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+            gap: 18,
           }}
         >
           <div>
-            <div style={{ fontWeight: 800 }}>Pagamento seguro</div>
-            <div style={{ color: "rgba(255,255,255,0.5)" }}>
-              Processado via Stripe
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>Pagamento seguro</div>
+            <div style={{ color: "rgba(255,255,255,0.52)", lineHeight: 1.7 }}>
+              Processamento via Stripe com ambiente confiável e padrão de mercado.
             </div>
           </div>
 
           <div>
-            <div style={{ fontWeight: 800 }}>Controle total</div>
-            <div style={{ color: "rgba(255,255,255,0.5)" }}>
-              Atualize ou cancele quando quiser
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>Controle total</div>
+            <div style={{ color: "rgba(255,255,255,0.52)", lineHeight: 1.7 }}>
+              Atualize ou cancele quando quiser, sem travas desnecessárias.
             </div>
           </div>
 
           <div>
-            <div style={{ fontWeight: 800 }}>Sem burocracia</div>
-            <div style={{ color: "rgba(255,255,255,0.5)" }}>
-              Tudo simples e direto
+            <div style={{ fontWeight: 800, marginBottom: 8 }}>Sem burocracia</div>
+            <div style={{ color: "rgba(255,255,255,0.52)", lineHeight: 1.7 }}>
+              Tudo pensado para ser simples, claro e profissional.
             </div>
           </div>
         </div>
