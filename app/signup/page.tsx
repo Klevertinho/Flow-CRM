@@ -35,5 +35,5 @@ export default async function SignupPage({
     redirect(`/?plans=1&plan=${plan}`);
   }
 
-  return <SignupClientPage />;
+  return <SignupClientPage plan={plan} />;
 }
