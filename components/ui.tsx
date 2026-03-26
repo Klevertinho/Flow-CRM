@@ -4,11 +4,12 @@ export function Card({ children }: any) {
   return (
     <div
       style={{
-        background: "linear-gradient(145deg,#020617,#0f172a)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
         borderRadius: 16,
         padding: 20,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+        backdropFilter: "blur(10px)",
+        transition: "0.2s",
       }}
     >
       {children}
@@ -16,17 +17,20 @@ export function Card({ children }: any) {
   );
 }
 
-export function Button({ children, onClick }: any) {
+export function Button({ children, onClick, variant = "primary" }: any) {
+  const primary = variant === "primary";
+
   return (
     <button
       onClick={onClick}
       style={{
-        background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
-        border: "none",
+        background: primary ? "var(--primary)" : "transparent",
+        border: primary ? "none" : "1px solid var(--border)",
         padding: "10px 16px",
         borderRadius: 10,
         color: "white",
         fontWeight: 600,
+        transition: "0.2s",
       }}
     >
       {children}
@@ -40,8 +44,8 @@ export function Input(props: any) {
       {...props}
       style={{
         background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        padding: "10px",
+        border: "1px solid var(--border)",
+        padding: "10px 12px",
         borderRadius: 10,
         color: "white",
         width: "100%",

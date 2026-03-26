@@ -8,9 +8,6 @@ export default function Page() {
   const supabase = createClient();
 
   const [leads, setLeads] = useState<any[]>([]);
-  const [selected, setSelected] = useState<any>(null);
-  const [note, setNote] = useState("");
-
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -49,44 +46,49 @@ export default function Page() {
       (Date.now() - new Date(date).getTime()) /
       (1000 * 60 * 60);
 
-    if (h < 6) return { label: "🔥 Quente", color: "#22c55e" };
-    if (h < 48) return { label: "⚠️ Morno", color: "#facc15" };
-    return { label: "❄️ Frio", color: "#ef4444" };
-  }
-
-  function nextAction(lead: any) {
-    const s = score(lead.last_contact).label;
-
-    if (s.includes("Frio")) return "Retomar contato urgente";
-    if (s.includes("Morno")) return "Enviar follow-up";
-    return "Fechar venda";
-  }
-
-  function openWhatsApp(lead: any) {
-    const phone = lead.phone?.replace(/\D/g, "");
-    const msg = encodeURIComponent(nextAction(lead));
-
-    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+    if (h < 6) return { label: "Quente", color: "#22c55e" };
+    if (h < 48) return { label: "Morno", color: "#facc15" };
+    return { label: "Frio", color: "#ef4444" };
   }
 
   return (
-    <div style={{ display: "grid", gap: 24 }}>
-      <h1 style={{ fontSize: 34 }}>Dashboard</h1>
+    <div style={{ display: "grid", gap: 28 }}>
+      
+      {/* HEADER */}
+      <div>
+        <h1 style={{ fontSize: 34, fontWeight: 900 }}>
+          Dashboard
+        </h1>
+        <p style={{ color: "var(--muted)" }}>
+          Visão clara da sua operação
+        </p>
+      </div>
 
-      {/* PRIORIDADE INTELIGENTE */}
+      {/* MÉTRICAS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+        <Card>
+          <strong style={{ fontSize: 22 }}>{leads.length}</strong>
+          <div style={{ color: "var(--muted)" }}>Leads</div>
+        </Card>
+
+        <Card>
+          <strong style={{ fontSize: 22 }}>
+            {leads.filter(l => score(l.last_contact).label === "Quente").length}
+          </strong>
+          <div style={{ color: "var(--muted)" }}>Quentes</div>
+        </Card>
+
+        <Card>
+          <strong style={{ fontSize: 22 }}>
+            {leads.filter(l => score(l.last_contact).label === "Frio").length}
+          </strong>
+          <div style={{ color: "var(--muted)" }}>Perdidos</div>
+        </Card>
+      </div>
+
+      {/* FORM */}
       <Card>
-        <h3>Prioridade do dia</h3>
-
-        {leads.slice(0, 3).map((lead) => (
-          <div key={lead.id}>
-            {lead.name} — {nextAction(lead)}
-          </div>
-        ))}
-      </Card>
-
-      {/* ADD */}
-      <Card>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 12 }}>
           <Input placeholder="Nome" value={name} onChange={(e:any)=>setName(e.target.value)} />
           <Input placeholder="Telefone" value={phone} onChange={(e:any)=>setPhone(e.target.value)} />
           <Button onClick={addLead}>Adicionar</Button>
@@ -95,28 +97,34 @@ export default function Page() {
 
       {/* LISTA */}
       <Card>
-        {leads.map((lead) => {
-          const s = score(lead.last_contact);
+        <div style={{ display: "grid", gap: 12 }}>
+          {leads.map((lead) => {
+            const s = score(lead.last_contact);
 
-          return (
-            <div key={lead.id} style={{ marginBottom: 10 }}>
-              {lead.name} - {s.label}
-              <Button onClick={() => openWhatsApp(lead)}>
-                WhatsApp
-              </Button>
-            </div>
-          );
-        })}
-      </Card>
+            return (
+              <div
+                key={lead.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: 14,
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600 }}>{lead.name}</div>
+                  <div style={{ fontSize: 12, color: s.color }}>
+                    {s.label}
+                  </div>
+                </div>
 
-      {/* DRAWER */}
-      {selected && (
-        <div>
-          <h2>{selected.name}</h2>
-          <Input value={note} onChange={(e:any)=>setNote(e.target.value)} />
-          <Button>Salvar</Button>
+                <Button>Ver</Button>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </Card>
     </div>
   );
 }
