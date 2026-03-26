@@ -7,7 +7,6 @@ type Lead = {
   id: number;
   name: string;
   lastContact: number;
-  messages: string[];
 };
 
 export default function DashboardPage() {
@@ -16,13 +15,11 @@ export default function DashboardPage() {
       id: 1,
       name: "João Silva",
       lastContact: Date.now() - 1000 * 60 * 60 * 2,
-      messages: ["Pediu orçamento", "Interessado no produto"],
     },
     {
       id: 2,
       name: "Maria Souza",
       lastContact: Date.now() - 1000 * 60 * 60 * 24 * 3,
-      messages: ["Sumiu depois da proposta"],
     },
   ]);
 
@@ -37,7 +34,6 @@ export default function DashboardPage() {
         id: Date.now(),
         name,
         lastContact: Date.now(),
-        messages: ["Novo lead"],
       },
     ]);
 
@@ -45,38 +41,100 @@ export default function DashboardPage() {
   }
 
   function getScore(hours: number) {
-    if (hours < 6) return "Quente";
-    if (hours < 48) return "Morno";
-    return "Frio";
+    if (hours < 6) return { label: "Quente", color: "#22c55e" };
+    if (hours < 48) return { label: "Morno", color: "#facc15" };
+    return { label: "Frio", color: "#ef4444" };
   }
 
-  function generateInsight(lead: Lead) {
-    const hours =
-      (Date.now() - lead.lastContact) / (1000 * 60 * 60);
-
-    if (hours < 6)
-      return "Lead engajado recentemente. Alta chance de fechamento.";
-
-    if (hours < 48)
-      return "Lead morno. Um follow-up agora pode converter.";
-
-    return "Lead esfriando. Precisa de reengajamento.";
-  }
-
-  function generateMessage(lead: Lead) {
-    return `Fala ${lead.name.split(" ")[0]}, tudo certo? Vi que você demonstrou interesse. Quer que eu te envie mais detalhes ou seguimos com a proposta?`;
+  function getInsight(hours: number) {
+    if (hours < 6) return "Alta chance de fechamento";
+    if (hours < 48) return "Momento ideal para follow-up";
+    return "Precisa reengajar";
   }
 
   return (
-    <div style={{ display: "grid", gap: 20 }}>
+    <div style={{ display: "grid", gap: 24 }}>
       {/* HEADER */}
       <div>
-        <h1 style={{ fontSize: 28, fontWeight: 900 }}>
-          CRM Inteligente
+        <h1 style={{ fontSize: 32, fontWeight: 900 }}>
+          Dashboard
         </h1>
         <p style={{ opacity: 0.6 }}>
-          Insights automáticos baseados no comportamento do lead
+          Visão geral da sua operação comercial
         </p>
+      </div>
+
+      {/* TOP GRID */}
+      <div
+        className="flowcrm-stats-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: 20,
+        }}
+      >
+        {/* PRIORIDADE */}
+        <Card>
+          <div style={{ marginBottom: 12, fontWeight: 800 }}>
+            Prioridade do dia
+          </div>
+
+          {leads.slice(0, 2).map((lead) => {
+            const hours =
+              (Date.now() - lead.lastContact) /
+              (1000 * 60 * 60);
+
+            const score = getScore(hours);
+
+            return (
+              <div
+                key={lead.id}
+                style={{
+                  padding: 12,
+                  borderRadius: 10,
+                  marginBottom: 10,
+                  background: "rgba(47,107,255,0.1)",
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>
+                  {lead.name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: score.color,
+                  }}
+                >
+                  {score.label}
+                </div>
+
+                <div style={{ fontSize: 12, opacity: 0.6 }}>
+                  {getInsight(hours)}
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+
+        {/* RESUMO */}
+        <Card>
+          <div style={{ marginBottom: 12, fontWeight: 800 }}>
+            Resumo
+          </div>
+
+          <div style={stat}>
+            Leads: <strong>{leads.length}</strong>
+          </div>
+
+          <div style={stat}>
+            Follow-ups: <strong>4</strong>
+          </div>
+
+          <div style={stat}>
+            Conversão: <strong>24%</strong>
+          </div>
+        </Card>
       </div>
 
       {/* ADD */}
@@ -87,13 +145,20 @@ export default function DashboardPage() {
             value={name}
             onChange={(e: any) => setName(e.target.value)}
           />
-          <Button onClick={addLead}>Adicionar</Button>
+
+          <Button onClick={addLead}>
+            Adicionar
+          </Button>
         </div>
       </Card>
 
-      {/* LEADS */}
+      {/* LISTA */}
       <Card>
-        <div style={{ display: "grid", gap: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 12 }}>
+          Leads
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
           {leads.map((lead) => {
             const hours =
               (Date.now() - lead.lastContact) /
@@ -105,59 +170,32 @@ export default function DashboardPage() {
               <div
                 key={lead.id}
                 style={{
-                  padding: 16,
-                  borderRadius: 14,
+                  padding: 14,
+                  borderRadius: 12,
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <div style={{ fontWeight: 800 }}>
-                  {lead.name}
-                </div>
+                <div>
+                  <div style={{ fontWeight: 800 }}>
+                    {lead.name}
+                  </div>
 
-                <div
-                  style={{
-                    fontSize: 12,
-                    opacity: 0.6,
-                    marginBottom: 6,
-                  }}
-                >
-                  Status: {score}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "#2F6BFF",
-                    marginBottom: 10,
-                  }}
-                >
-                  {generateInsight(lead)}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 13,
-                    opacity: 0.7,
-                    marginBottom: 10,
-                  }}
-                >
-                  Sugestão de mensagem:
-                </div>
-
-                <div
-                  style={{
-                    padding: 10,
-                    borderRadius: 10,
-                    background: "rgba(47,107,255,0.1)",
-                    marginBottom: 10,
-                  }}
-                >
-                  {generateMessage(lead)}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: score.color,
+                    }}
+                  >
+                    {score.label}
+                  </div>
                 </div>
 
                 <Button variant="ghost">
-                  Copiar mensagem
+                  Abrir
                 </Button>
               </div>
             );
@@ -167,3 +205,8 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+const stat = {
+  marginBottom: 8,
+  opacity: 0.7,
+};
