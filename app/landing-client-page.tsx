@@ -177,6 +177,152 @@ function MetricChip({
   );
 }
 
+function BenefitCard({
+  title,
+  text,
+  icon,
+}: {
+  title: string;
+  text: string;
+  icon: string;
+}) {
+  return (
+    <GlassCard>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 14,
+          display: "grid",
+          placeItems: "center",
+          background: "rgba(37,99,235,0.14)",
+          border: "1px solid rgba(96,165,250,0.16)",
+          fontSize: 18,
+          marginBottom: 16,
+        }}
+      >
+        {icon}
+      </div>
+
+      <div
+        style={{
+          fontWeight: 900,
+          fontSize: 22,
+          color: "#fff",
+          marginBottom: 10,
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          color: "rgba(255,255,255,0.68)",
+          lineHeight: 1.8,
+          fontSize: 15,
+        }}
+      >
+        {text}
+      </div>
+    </GlassCard>
+  );
+}
+
+function StepCard({
+  number,
+  title,
+  text,
+}: {
+  number: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <GlassCard>
+      <div
+        style={{
+          fontSize: 34,
+          fontWeight: 900,
+          color: "#60a5fa",
+          marginBottom: 12,
+        }}
+      >
+        {number}
+      </div>
+
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 900,
+          color: "#fff",
+          marginBottom: 10,
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          color: "rgba(255,255,255,0.68)",
+          lineHeight: 1.8,
+          fontSize: 15,
+        }}
+      >
+        {text}
+      </div>
+    </GlassCard>
+  );
+}
+function BenefitCard({
+  title,
+  text,
+  icon,
+}: {
+  title: string;
+  text: string;
+  icon: string;
+}) {
+  return (
+    <GlassCard>
+      <div
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 14,
+          display: "grid",
+          placeItems: "center",
+          background: "rgba(37,99,235,0.14)",
+          border: "1px solid rgba(96,165,250,0.16)",
+          fontSize: 18,
+          marginBottom: 16,
+        }}
+      >
+        {icon}
+      </div>
+
+      <div
+        style={{
+          fontWeight: 900,
+          fontSize: 22,
+          color: "#fff",
+          marginBottom: 10,
+        }}
+      >
+        {title}
+      </div>
+
+      <div
+        style={{
+          color: "rgba(255,255,255,0.68)",
+          lineHeight: 1.8,
+          fontSize: 15,
+        }}
+      >
+        {text}
+      </div>
+    </GlassCard>
+  );
+}
 function PricingCard({
   title,
   price,
@@ -813,7 +959,6 @@ export default function LandingClientPage() {
               marginBottom: 18,
               fontSize: "clamp(48px, 7vw, 88px)",
               lineHeight: 0.96,
-              letterSpacing: -2.8,
               fontWeight: 900,
               maxWidth: 860,
             }}
@@ -1149,254 +1294,10 @@ export default function LandingClientPage() {
             gap: 18,
           }}
         >
-          <GlassCard>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>1</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Capture o lead</div>
-            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
-              Adicione o contato e registre contexto sem depender de memória ou conversa solta.
-            </div>
-          </GlassCard>
-
-          <GlassCard>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>2</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Organize o pipeline</div>
-            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
-              Visualize prioridade, momento do lead e quem precisa de ação antes da oportunidade esfriar.
-            </div>
-          </GlassCard>
-
-          <GlassCard>
-            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>3</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Siga o processo</div>
-            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
-              Faça follow-ups, mantenha histórico e transforme seu comercial em algo previsível.
-            </div>
-          </GlassCard>
-        </div>
-      </section>
-
-      <section
-        ref={pricingRef}
-        style={{
-          maxWidth: 1260,
-          margin: "0 auto",
-          padding: "0 20px 84px",
-          transform: pricingPulse ? "scale(1.01)" : "scale(1)",
-          transition: "transform .35s ease",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 900,
-            margin: "0 auto 34px",
-            textAlign: "center",
-          }}
-        >
-          <SectionTag>Planos</SectionTag>
-
-          <h2
-            style={{
-              marginTop: 18,
-              fontSize: "clamp(36px, 5vw, 60px)",
-              lineHeight: 1.03,
-              fontWeight: 900,
-            }}
-          >
-            Escolha o plano que acompanha o ritmo da sua operação
-          </h2>
-
-          <p
-            style={{
-              marginTop: 14,
-              color: "rgba(255,255,255,0.68)",
-              fontSize: 19,
-              lineHeight: 1.8,
-            }}
-          >
-            Você não precisa de um sistema complexo. Precisa de um sistema que te faça vender melhor, com menos desperdício e mais controle.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-            gap: 24,
-            alignItems: "stretch",
-          }}
-        >
-          <PricingCard
-            title="Starter"
-            price="R$ 39"
-            subtitle="Para quem quer sair do caos e começar a organizar leads, follow-ups e rotina de vendas sem complicação."
-            features={[
-              "1 conta com acesso completo",
-              "Leads + histórico + follow-ups",
-              "Visão de prioridade comercial",
-              "Base pronta para crescer com o produto",
-            ]}
-            cta="Começar no Starter"
-            onClick={() => void handlePlanClick("starter")}
-            footnote="Ideal para operação individual"
-            isHighlightedByQuery={highlightedPlanFromQuery === "starter"}
-            loading={loadingPlan === "starter"}
+          <StepCard
+            number="1"
+            title="Capture o lead"
+            text="Adicione o contato e registre contexto sem depender de memória ou conversa solta."
           />
-
-          <PricingCard
-            title="Pro"
-            price="R$ 79"
-            subtitle="Para quem quer mais percepção de valor, mais estrutura comercial e um plano melhor para crescer sem improviso."
-            features={[
-              "Tudo do Starter",
-              "Melhor posicionamento para operação séria",
-              "Mais espaço para evolução e recursos futuros",
-              "Plano mais forte para quem quer profissionalizar o comercial",
-            ]}
-            cta="Assinar o Pro"
-            highlighted
-            badge="Mais recomendado"
-            onClick={() => void handlePlanClick("pro")}
-            footnote="Mais escolhido por quem quer crescer"
-            isHighlightedByQuery={highlightedPlanFromQuery === "pro"}
-            loading={loadingPlan === "pro"}
-          />
-
-          <PricingCard
-            title="Equipe"
-            price="Sob consulta"
-            subtitle="Para operação maior, múltiplos usuários, necessidades específicas e evolução sob medida."
-            features={[
-              "Estrutura comercial maior",
-              "Possível personalização futura",
-              "Suporte mais próximo da operação",
-              "Melhor caminho para ticket maior",
-            ]}
-            cta="Falar com a VALORA"
-            onClick={() => {
-              window.location.href =
-                "mailto:klevertons.a74@gmail.com?subject=Quero o plano Equipe da VALORA";
-            }}
-            footnote="Para empresas com necessidade sob medida"
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: 18,
-            textAlign: "center",
-            color: "rgba(255,255,255,0.48)",
-            fontSize: 13,
-          }}
-        >
-          Pagamento seguro via Stripe • Cancele quando quiser • Sem burocracia para começar
-        </div>
-      </section>
-
-      <section
-        style={{
-          maxWidth: 980,
-          margin: "0 auto",
-          padding: "0 20px 78px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 760,
-            margin: "0 auto 24px",
-            textAlign: "center",
-          }}
-        >
-          <SectionTag>Objeções que travam compra</SectionTag>
-
-          <h2
-            style={{
-              marginTop: 18,
-              fontSize: "clamp(34px, 5vw, 54px)",
-              lineHeight: 1.06,
-              fontWeight: 900,
-            }}
-          >
-            O cliente não precisa só gostar. Precisa confiar.
-          </h2>
-        </div>
-
-        <div style={{ display: "grid", gap: 14 }}>
-          <FaqItem
-            question="Isso serve pra quem vende pelo WhatsApp?"
-            answer="Sim. O produto foi pensado justamente para operações que conversam muito, perdem timing e precisam organizar follow-up com mais clareza."
-          />
-          <FaqItem
-            question="Preciso ser uma empresa grande para usar?"
-            answer="Não. O Starter já atende autônomos, pequenos negócios e operações enxutas que querem vender melhor sem depender da memória."
-          />
-          <FaqItem
-            question="É difícil começar?"
-            answer="Não. A proposta é ser simples o suficiente para usar hoje e forte o suficiente para acompanhar seu crescimento depois."
-          />
-          <FaqItem
-            question="Posso cancelar quando quiser?"
-            answer="Sim. O pagamento é feito com segurança e o cancelamento pode ser feito sem burocracia."
-          />
-        </div>
-      </section>
-
-      <section
-        style={{
-          maxWidth: 980,
-          margin: "0 auto",
-          padding: "0 20px 120px",
-        }}
-      >
-        <GlassCard highlighted>
-          <div style={{ textAlign: "center" }}>
-            <h2
-              style={{
-                fontSize: "clamp(34px, 5vw, 58px)",
-                lineHeight: 1.04,
-                fontWeight: 900,
-                marginBottom: 14,
-              }}
-            >
-              Menos conversa perdida. Mais processo. Mais fechamento.
-            </h2>
-
-            <p
-              style={{
-                maxWidth: 760,
-                margin: "0 auto 24px",
-                color: "rgba(255,255,255,0.74)",
-                fontSize: 18,
-                lineHeight: 1.8,
-              }}
-            >
-              O cliente não quer mais uma ferramenta bonita. Ele quer a sensação de que finalmente encontrou uma solução que organiza o comercial e faz a operação andar.
-            </p>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
-              <HeaderButton onClick={goToPricing} primary>
-                Ver planos e começar
-              </HeaderButton>
-
-              {isLoggedIn ? (
-                hasActiveSubscription ? (
-                  <HeaderButton href="/app">Ir para o CRM</HeaderButton>
-                ) : (
-                  <HeaderButton href="/logout">Trocar de conta</HeaderButton>
-                )
-              ) : (
-                <HeaderButton href="/login">Já tenho conta</HeaderButton>
-              )}
-            </div>
-          </div>
-        </GlassCard>
-      </section>
-    </div>
-  );
-}
+          <StepCard
+           
