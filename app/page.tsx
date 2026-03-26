@@ -7,29 +7,38 @@ function TopButton(props: {
   primary?: boolean;
   scroll?: boolean;
 }) {
+  const sharedStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 52,
+    padding: "0 20px",
+    borderRadius: 16,
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: 15,
+    background: props.primary
+      ? "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)"
+      : "rgba(255,255,255,0.05)",
+    border: props.primary ? "none" : "1px solid rgba(255,255,255,0.14)",
+    color: "#fff",
+    boxShadow: props.primary
+      ? "0 18px 40px rgba(37,99,235,0.28)"
+      : "none",
+    transition: "all .2s ease",
+  };
+
   if (props.scroll) {
     return (
       <a
         href={props.href}
         data-scroll-pricing="true"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 52,
-          padding: "0 20px",
-          borderRadius: 16,
-          textDecoration: "none",
-          fontWeight: 900,
-          fontSize: 15,
-          background: props.primary
-            ? "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)"
-            : "rgba(255,255,255,0.05)",
-          border: props.primary ? "none" : "1px solid rgba(255,255,255,0.14)",
-          color: "#fff",
-          boxShadow: props.primary
-            ? "0 18px 40px rgba(37,99,235,0.28)"
-            : "none",
+        style={sharedStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0px)";
         }}
       >
         {props.children}
@@ -40,24 +49,12 @@ function TopButton(props: {
   return (
     <Link
       href={props.href}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 52,
-        padding: "0 20px",
-        borderRadius: 16,
-        textDecoration: "none",
-        fontWeight: 900,
-        fontSize: 15,
-        background: props.primary
-          ? "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)"
-          : "rgba(255,255,255,0.05)",
-        border: props.primary ? "none" : "1px solid rgba(255,255,255,0.14)",
-        color: "#fff",
-        boxShadow: props.primary
-          ? "0 18px 40px rgba(37,99,235,0.28)"
-          : "none",
+      style={sharedStyle}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0px)";
       }}
     >
       {props.children}
@@ -385,6 +382,59 @@ function PlanCard(props: {
   );
 }
 
+function StepCard(props: {
+  number: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: 24,
+        borderRadius: 22,
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.025) 100%)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 34,
+          fontWeight: 900,
+          color: "#2563eb",
+          lineHeight: 1,
+          marginBottom: 14,
+          letterSpacing: -1,
+        }}
+      >
+        {props.number}
+      </div>
+
+      <div
+        style={{
+          color: "#fff",
+          fontWeight: 900,
+          fontSize: 21,
+          marginBottom: 10,
+        }}
+      >
+        {props.title}
+      </div>
+
+      <div
+        style={{
+          color: "rgba(255,255,255,0.66)",
+          lineHeight: 1.8,
+          fontSize: 15,
+        }}
+      >
+        {props.text}
+      </div>
+    </div>
+  );
+}
+
 export default async function LandingPage() {
   const supabase = await createClient();
 
@@ -512,7 +562,7 @@ export default async function LandingPage() {
             </>
           ) : (
             <>
-              <TopButton href="/account">Login</TopButton>
+              <TopButton href="/login">Login</TopButton>
               <TopButton href="#pricing" primary scroll>
                 Assinar
               </TopButton>
@@ -545,14 +595,14 @@ export default async function LandingPage() {
               letterSpacing: -2.8,
               fontWeight: 900,
               color: "#ffffff",
-              maxWidth: 820,
+              maxWidth: 860,
             }}
           >
-            Pare de perder
+            Venda mais
             <br />
-            vendas por
+            sem depender
             <br />
-            desorganização
+            da sua memória
           </h1>
 
           <p
@@ -564,7 +614,8 @@ export default async function LandingPage() {
               lineHeight: 1.75,
             }}
           >
-            Organize leads, acompanhe follow-ups, registre contexto e transforme conversas soltas em uma operação comercial mais séria, previsível e lucrativa.
+            Pare de esquecer follow-ups, perder timing e se perder nas conversas.
+            Transforme seu WhatsApp em uma operação comercial organizada, previsível e lucrativa.
           </p>
 
           <div
@@ -651,6 +702,34 @@ export default async function LandingPage() {
                 }}
               >
                 Hoje no seu CRM
+              </div>
+
+              <div
+                style={{
+                  marginBottom: 14,
+                  padding: 16,
+                  borderRadius: 18,
+                  background: "rgba(37,99,235,0.12)",
+                  border: "1px solid rgba(59,130,246,0.25)",
+                }}
+              >
+                <div style={{ fontSize: 13, color: "#93c5fd", fontWeight: 800 }}>
+                  Próxima ação sugerida
+                </div>
+
+                <div style={{ marginTop: 6, fontWeight: 800 }}>
+                  Responder João agora (lead quente há 2h)
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 13,
+                    color: "rgba(255,255,255,0.6)",
+                  }}
+                >
+                  Probabilidade de fechamento: alta
+                </div>
               </div>
 
               <div style={{ display: "grid", gap: 12 }}>
@@ -869,6 +948,59 @@ export default async function LandingPage() {
 
       <section
         style={{
+          maxWidth: 1000,
+          margin: "0 auto",
+          padding: "0 20px 80px",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 30,
+          }}
+        >
+          <SectionTag>Como funciona</SectionTag>
+
+          <h2
+            style={{
+              fontSize: "clamp(34px, 5vw, 52px)",
+              fontWeight: 900,
+              marginTop: 18,
+              marginBottom: 0,
+              letterSpacing: -1.2,
+            }}
+          >
+            Simples o suficiente pra usar hoje
+          </h2>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+            gap: 20,
+          }}
+        >
+          <StepCard
+            number="1"
+            title="Capture o lead"
+            text="Adicione contatos e registre contexto sem depender de conversa solta."
+          />
+          <StepCard
+            number="2"
+            title="Organize o pipeline"
+            text="Veja quem está quente, quem esfriou e quem precisa de ação agora."
+          />
+          <StepCard
+            number="3"
+            title="Siga o processo"
+            text="Faça follow-ups no tempo certo e aumente seu fechamento com mais previsibilidade."
+          />
+        </div>
+      </section>
+
+      <section
+        style={{
           maxWidth: 1260,
           margin: "0 auto",
           padding: "0 20px 86px",
@@ -1029,6 +1161,17 @@ export default async function LandingPage() {
             href="mailto:klevertons.a74@gmail.com?subject=Quero o plano Equipe do FlowCRM"
             cta="Falar com a gente"
           />
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            textAlign: "center",
+            fontSize: 13,
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          Pagamento seguro via Stripe • Cancele quando quiser
         </div>
       </section>
 
