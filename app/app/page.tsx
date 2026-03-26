@@ -9,7 +9,6 @@ type Lead = {
   name: string;
   phone: string;
   created_at: string;
-  last_contact: string;
 };
 
 type Event = {
@@ -93,9 +92,35 @@ export default function Page() {
     loadEvents(selectedLead.id);
   }
 
+  async function logEvent(leadId: string, text: string) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    await supabase.from("lead_events").insert({
+      lead_id: leadId,
+      user_id: user?.id,
+      text,
+    });
+  }
+
   function openLead(lead: Lead) {
     setSelectedLead(lead);
     loadEvents(lead.id);
+  }
+
+  function generateMessage(name: string) {
+    return `Fala ${name.split(" ")[0]}, tudo certo? Vi seu interesse e queria te ajudar a avançar. Quer continuar?`;
+  }
+
+  async function openWhatsApp(lead: Lead) {
+    const msg = generateMessage(lead.name);
+    const encoded = encodeURIComponent(msg);
+    const phone = lead.phone?.replace(/\D/g, "");
+
+    await logEvent(lead.id, "Mensagem enviada via WhatsApp");
+
+    window.open(`https://wa.me/55${phone}?text=${encoded}`, "_blank");
   }
 
   function formatTime(date: string) {
@@ -106,17 +131,6 @@ export default function Page() {
     if (diff < 1) return "agora";
     if (diff < 24) return `${Math.floor(diff)}h atrás`;
     return `${Math.floor(diff / 24)}d atrás`;
-  }
-
-  function generateMessage(name: string) {
-    return `Fala ${name.split(" ")[0]}, tudo certo? Podemos avançar nisso?`;
-  }
-
-  function openWhatsApp(lead: Lead) {
-    const message = encodeURIComponent(generateMessage(lead.name));
-    const phone = lead.phone?.replace(/\D/g, "");
-
-    window.open(`https://wa.me/55${phone}?text=${message}`, "_blank");
   }
 
   return (
@@ -135,7 +149,7 @@ export default function Page() {
           />
 
           <Input
-            placeholder="Telefone (com DDD)"
+            placeholder="Telefone"
             value={phone}
             onChange={(e: any) => setPhone(e.target.value)}
           />
@@ -215,9 +229,9 @@ export default function Page() {
 
             <Button onClick={addNote}>Salvar</Button>
 
-            {/* WHATSAPP */}
+            {/* AUTO MSG */}
             <Button onClick={() => openWhatsApp(selectedLead)}>
-              Falar no WhatsApp
+              Enviar mensagem inteligente
             </Button>
           </div>
         </div>
