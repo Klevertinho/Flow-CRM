@@ -7,6 +7,7 @@ import { Button, Card, Input } from "@/components/ui";
 type Lead = {
   id: string;
   name: string;
+  phone: string;
   created_at: string;
   last_contact: string;
 };
@@ -23,7 +24,9 @@ export default function Page() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
+
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -31,11 +34,7 @@ export default function Page() {
   }, []);
 
   async function loadLeads() {
-    const { data } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
-
+    const { data } = await supabase.from("leads").select("*");
     setLeads(data || []);
   }
 
@@ -60,6 +59,7 @@ export default function Page() {
       .from("leads")
       .insert({
         name,
+        phone,
         user_id: user?.id,
       })
       .select()
@@ -72,6 +72,7 @@ export default function Page() {
     });
 
     setName("");
+    setPhone("");
     loadLeads();
   }
 
@@ -88,14 +89,8 @@ export default function Page() {
       text: note,
     });
 
-    await supabase
-      .from("leads")
-      .update({ last_contact: new Date().toISOString() })
-      .eq("id", selectedLead.id);
-
     setNote("");
     loadEvents(selectedLead.id);
-    loadLeads();
   }
 
   function openLead(lead: Lead) {
@@ -113,46 +108,70 @@ export default function Page() {
     return `${Math.floor(diff / 24)}d atrás`;
   }
 
+  function generateMessage(name: string) {
+    return `Fala ${name.split(" ")[0]}, tudo certo? Podemos avançar nisso?`;
+  }
+
+  function openWhatsApp(lead: Lead) {
+    const message = encodeURIComponent(generateMessage(lead.name));
+    const phone = lead.phone?.replace(/\D/g, "");
+
+    window.open(`https://wa.me/55${phone}?text=${message}`, "_blank");
+  }
+
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <h1 style={{ fontSize: 28, fontWeight: 900 }}>
         CRM VALORA
       </h1>
 
+      {/* ADD */}
       <Card>
         <div style={{ display: "flex", gap: 10 }}>
           <Input
-            placeholder="Nome do lead"
+            placeholder="Nome"
             value={name}
             onChange={(e: any) => setName(e.target.value)}
           />
+
+          <Input
+            placeholder="Telefone (com DDD)"
+            value={phone}
+            onChange={(e: any) => setPhone(e.target.value)}
+          />
+
           <Button onClick={addLead}>Adicionar</Button>
         </div>
       </Card>
 
+      {/* LIST */}
       <Card>
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: 10 }}>
           {leads.map((lead) => (
             <div
               key={lead.id}
               style={{
-                padding: 12,
-                borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.06)",
                 display: "flex",
                 justifyContent: "space-between",
               }}
             >
               <div>{lead.name}</div>
 
-              <Button onClick={() => openLead(lead)}>
-                Abrir
-              </Button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <Button onClick={() => openLead(lead)}>
+                  Abrir
+                </Button>
+
+                <Button onClick={() => openWhatsApp(lead)}>
+                  WhatsApp
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       </Card>
 
+      {/* DRAWER */}
       {selectedLead && (
         <div
           onClick={() => setSelectedLead(null)}
@@ -178,18 +197,16 @@ export default function Page() {
             <h2>{selectedLead.name}</h2>
 
             {/* TIMELINE */}
-            <div>
-              {events.map((e) => (
-                <div key={e.id}>
-                  {e.text}
-                  <div style={{ fontSize: 12 }}>
-                    {formatTime(e.created_at)}
-                  </div>
+            {events.map((e) => (
+              <div key={e.id}>
+                {e.text}
+                <div style={{ fontSize: 12 }}>
+                  {formatTime(e.created_at)}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
 
-            {/* ADD NOTE */}
+            {/* NOTE */}
             <Input
               placeholder="Nova nota"
               value={note}
@@ -197,6 +214,11 @@ export default function Page() {
             />
 
             <Button onClick={addNote}>Salvar</Button>
+
+            {/* WHATSAPP */}
+            <Button onClick={() => openWhatsApp(selectedLead)}>
+              Falar no WhatsApp
+            </Button>
           </div>
         </div>
       )}
