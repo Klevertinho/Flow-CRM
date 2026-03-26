@@ -220,7 +220,7 @@ export default async function AppLayout({
               fontWeight: 700,
             }}
           >
-            operação clara > improviso
+            operação clara &gt; improviso
           </div>
         </header>
 
