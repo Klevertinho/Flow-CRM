@@ -34,7 +34,7 @@ function HeaderButton({
       : "rgba(255,255,255,0.04)",
     color: "#fff",
     boxShadow: primary ? "0 20px 50px rgba(37,99,235,0.30)" : "none",
-    transition: "transform .18s ease, box-shadow .18s ease, border-color .18s ease",
+    transition: "transform .18s ease",
     cursor: "pointer",
   };
 
@@ -86,7 +86,6 @@ function SectionTag({ children }: { children: React.ReactNode }) {
         color: "#bfdbfe",
         fontWeight: 800,
         fontSize: 13,
-        letterSpacing: 0.2,
       }}
     >
       <span
@@ -178,106 +177,6 @@ function MetricChip({
   );
 }
 
-function BenefitCard({
-  title,
-  text,
-  icon,
-}: {
-  title: string;
-  text: string;
-  icon: string;
-}) {
-  return (
-    <GlassCard>
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 14,
-          display: "grid",
-          placeItems: "center",
-          background: "rgba(37,99,235,0.14)",
-          border: "1px solid rgba(96,165,250,0.16)",
-          fontSize: 18,
-          marginBottom: 16,
-        }}
-      >
-        {icon}
-      </div>
-
-      <div
-        style={{
-          fontWeight: 900,
-          fontSize: 22,
-          color: "#fff",
-          marginBottom: 10,
-          letterSpacing: -0.3,
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          color: "rgba(255,255,255,0.68)",
-          lineHeight: 1.8,
-          fontSize: 15,
-        }}
-      >
-        {text}
-      </div>
-    </GlassCard>
-  );
-}
-
-function StepCard({
-  number,
-  title,
-  text,
-}: {
-  number: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <GlassCard>
-      <div
-        style={{
-          fontSize: 34,
-          fontWeight: 900,
-          color: "#60a5fa",
-          letterSpacing: -1,
-          marginBottom: 12,
-        }}
-      >
-        {number}
-      </div>
-
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 900,
-          color: "#fff",
-          marginBottom: 10,
-          letterSpacing: -0.3,
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          color: "rgba(255,255,255,0.68)",
-          lineHeight: 1.8,
-          fontSize: 15,
-        }}
-      >
-        {text}
-      </div>
-    </GlassCard>
-  );
-}
-
 function PricingCard({
   title,
   price,
@@ -325,7 +224,6 @@ function PricingCard({
               fontWeight: 800,
               fontSize: 12,
               textTransform: "uppercase",
-              letterSpacing: 0.5,
               marginBottom: 16,
             }}
           >
@@ -339,7 +237,6 @@ function PricingCard({
             fontWeight: 900,
             color: "#fff",
             marginBottom: 12,
-            letterSpacing: -0.8,
           }}
         >
           {title}
@@ -360,7 +257,6 @@ function PricingCard({
               lineHeight: 1,
               fontWeight: 900,
               color: "#fff",
-              letterSpacing: -1.3,
             }}
           >
             {price}
@@ -431,18 +327,7 @@ function PricingCard({
             fontWeight: 900,
             fontSize: 15,
             cursor: loading ? "not-allowed" : "pointer",
-            boxShadow:
-              highlighted || isHighlightedByQuery
-                ? "0 20px 50px rgba(37,99,235,0.26)"
-                : "none",
             opacity: loading ? 0.7 : 1,
-            transition: "transform .18s ease, box-shadow .18s ease",
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.transform = "translateY(-2px)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
           }}
         >
           {loading ? "Carregando..." : cta}
@@ -530,7 +415,7 @@ export default function LandingClientPage() {
   const [activeMockTab, setActiveMockTab] = useState<"today" | "pipeline" | "ai">("today");
   const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const highlightedPlanFromQuery =
     searchParams.get("plan") === "pro"
@@ -543,7 +428,7 @@ export default function LandingClientPage() {
     searchParams.get("plans") === "1" || searchParams.get("plan") !== null;
 
   useEffect(() => {
-    async function loadSessionState() {
+    async function loadState() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -565,7 +450,7 @@ export default function LandingClientPage() {
       setHasActiveSubscription(!!subscription);
     }
 
-    void loadSessionState();
+    void loadState();
   }, [supabase]);
 
   useEffect(() => {
@@ -605,6 +490,18 @@ export default function LandingClientPage() {
         return;
       }
 
+      const { data: activeSubscription } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (activeSubscription) {
+        window.location.href = "/app";
+        return;
+      }
+
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: {
@@ -616,7 +513,7 @@ export default function LandingClientPage() {
       const data = await res.json();
 
       if (res.status === 409) {
-        window.location.href = data?.redirectTo || "/billing";
+        window.location.href = data?.redirectTo || "/app";
         return;
       }
 
@@ -875,13 +772,15 @@ export default function LandingClientPage() {
           {isLoggedIn ? (
             <>
               <HeaderButton href="/logout">Sair</HeaderButton>
-              <HeaderButton
-                href={hasActiveSubscription ? "/app" : undefined}
-                onClick={!hasActiveSubscription ? goToPricing : undefined}
-                primary
-              >
-                {hasActiveSubscription ? "Ir para o CRM" : "Ver planos"}
-              </HeaderButton>
+              {hasActiveSubscription ? (
+                <HeaderButton href="/app" primary>
+                  Ir para o CRM
+                </HeaderButton>
+              ) : (
+                <HeaderButton onClick={goToPricing} primary>
+                  Ver planos
+                </HeaderButton>
+              )}
             </>
           ) : (
             <>
@@ -977,7 +876,6 @@ export default function LandingClientPage() {
                     fontWeight: 900,
                     fontSize: 20,
                     marginBottom: 10,
-                    letterSpacing: -0.3,
                   }}
                 >
                   {title}
@@ -1087,7 +985,6 @@ export default function LandingClientPage() {
               marginTop: 18,
               fontSize: "clamp(36px, 5vw, 58px)",
               lineHeight: 1.04,
-              letterSpacing: -1.4,
               fontWeight: 900,
             }}
           >
@@ -1102,7 +999,7 @@ export default function LandingClientPage() {
               lineHeight: 1.8,
             }}
           >
-            A pessoa não compra “mais uma ferramenta”. Ela compra a sensação de finalmente ter controle sobre o próprio comercial.
+            A pessoa não compra mais uma ferramenta. Ela compra a sensação de finalmente ter controle sobre o próprio comercial.
           </p>
         </div>
 
@@ -1136,7 +1033,6 @@ export default function LandingClientPage() {
                 fontSize: 30,
                 fontWeight: 900,
                 marginBottom: 16,
-                letterSpacing: -0.8,
               }}
             >
               Venda no improviso
@@ -1188,7 +1084,6 @@ export default function LandingClientPage() {
                 fontSize: 30,
                 fontWeight: 900,
                 marginBottom: 16,
-                letterSpacing: -0.8,
               }}
             >
               Operação com clareza
@@ -1241,7 +1136,6 @@ export default function LandingClientPage() {
               fontSize: "clamp(34px, 5vw, 54px)",
               lineHeight: 1.06,
               fontWeight: 900,
-              letterSpacing: -1.2,
             }}
           >
             Simples o suficiente pra usar hoje
@@ -1255,21 +1149,29 @@ export default function LandingClientPage() {
             gap: 18,
           }}
         >
-          <StepCard
-            number="1"
-            title="Capture o lead"
-            text="Adicione o contato e registre contexto sem depender de memória ou conversa solta."
-          />
-          <StepCard
-            number="2"
-            title="Organize o pipeline"
-            text="Visualize prioridade, momento do lead e quem precisa de ação antes da oportunidade esfriar."
-          />
-          <StepCard
-            number="3"
-            title="Siga o processo"
-            text="Faça follow-ups, mantenha histórico e transforme seu comercial em algo previsível."
-          />
+          <GlassCard>
+            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>1</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Capture o lead</div>
+            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
+              Adicione o contato e registre contexto sem depender de memória ou conversa solta.
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>2</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Organize o pipeline</div>
+            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
+              Visualize prioridade, momento do lead e quem precisa de ação antes da oportunidade esfriar.
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <div style={{ fontSize: 34, fontWeight: 900, color: "#60a5fa", marginBottom: 12 }}>3</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginBottom: 10 }}>Siga o processo</div>
+            <div style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15 }}>
+              Faça follow-ups, mantenha histórico e transforme seu comercial em algo previsível.
+            </div>
+          </GlassCard>
         </div>
       </section>
 
@@ -1297,7 +1199,6 @@ export default function LandingClientPage() {
               marginTop: 18,
               fontSize: "clamp(36px, 5vw, 60px)",
               lineHeight: 1.03,
-              letterSpacing: -1.5,
               fontWeight: 900,
             }}
           >
@@ -1412,7 +1313,6 @@ export default function LandingClientPage() {
               marginTop: 18,
               fontSize: "clamp(34px, 5vw, 54px)",
               lineHeight: 1.06,
-              letterSpacing: -1.2,
               fontWeight: 900,
             }}
           >
@@ -1448,16 +1348,11 @@ export default function LandingClientPage() {
         }}
       >
         <GlassCard highlighted>
-          <div
-            style={{
-              textAlign: "center",
-            }}
-          >
+          <div style={{ textAlign: "center" }}>
             <h2
               style={{
                 fontSize: "clamp(34px, 5vw, 58px)",
                 lineHeight: 1.04,
-                letterSpacing: -1.4,
                 fontWeight: 900,
                 marginBottom: 14,
               }}

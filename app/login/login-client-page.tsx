@@ -2,44 +2,63 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "../../lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginClientPage() {
-  const router = useRouter();
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setLoading(true);
     setError("");
-    setSuccess("");
 
     try {
-      setLoading(true);
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (signInError) {
+        throw signInError;
+      }
+
+      const user = data.user;
+
+      if (!user) {
+        throw new Error("Usuário não encontrado após login.");
+      }
+
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (!subscription) {
+        window.location.href = "/?plans=1";
         return;
       }
 
-      setSuccess("Login realizado. Redirecionando...");
-      router.push("/");
-      router.refresh();
-    } catch {
-      setError("Não foi possível entrar agora.");
-    } finally {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile?.onboarding_completed) {
+        window.location.href = "/onboarding";
+        return;
+      }
+
+      window.location.href = "/app";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao entrar.");
       setLoading(false);
     }
   }
@@ -48,305 +67,148 @@ export default function LoginClientPage() {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, rgba(37,99,235,0.12) 0%, rgba(2,6,23,1) 38%, #020617 75%, #01030a 100%)",
-        color: "#f8fafc",
+        padding: 24,
         display: "grid",
-        gridTemplateColumns: "1.1fr 0.9fr",
+        placeItems: "center",
+        background:
+          "radial-gradient(circle at top left, rgba(37,99,235,0.16) 0%, rgba(15,23,42,0.98) 30%, #020617 70%, #01030a 100%)",
+        color: "#f8fafc",
       }}
     >
       <div
         style={{
-          padding: "64px 56px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          borderRight: "1px solid #162236",
-        }}
-      >
-        <div>
-          <Link
-            href="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              color: "#f8fafc",
-              textDecoration: "none",
-              fontWeight: 900,
-              fontSize: 22,
-              letterSpacing: -0.4,
-            }}
-          >
-            <span
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-                boxShadow: "0 18px 35px rgba(37,99,235,0.28)",
-              }}
-            >
-              F
-            </span>
-            FlowCRM
-          </Link>
-
-          <div style={{ marginTop: 72, maxWidth: 620 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                padding: "8px 12px",
-                borderRadius: 999,
-                border: "1px solid #22304a",
-                background: "rgba(11,18,32,0.75)",
-                color: "#93c5fd",
-                fontWeight: 800,
-                fontSize: 12,
-                marginBottom: 18,
-              }}
-            >
-              Login da operação
-            </div>
-
-            <h1
-              style={{
-                fontSize: 56,
-                lineHeight: 1.02,
-                letterSpacing: -1.4,
-                margin: 0,
-                fontWeight: 900,
-              }}
-            >
-              Entre e volte a vender com controle
-            </h1>
-
-            <p
-              style={{
-                marginTop: 22,
-                color: "#94a3b8",
-                fontSize: 18,
-                lineHeight: 1.8,
-              }}
-            >
-              Organize seus leads, acompanhe follow-ups e tire sua operação do
-              improviso. O WhatsApp continua sendo o canal. O caos não precisa continuar.
-            </p>
-          </div>
-        </div>
-
-        <div style={{ color: "#64748b", fontSize: 14 }}>
-          Feito para quem vende por conversa, não para quem gosta de planilha sofrida.
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 32,
+          width: "100%",
+          maxWidth: 520,
+          borderRadius: 26,
+          padding: 28,
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
+          backdropFilter: "blur(12px)",
         }}
       >
         <div
           style={{
-            width: "100%",
-            maxWidth: 500,
-            borderRadius: 28,
-            padding: 28,
-            background:
-              "linear-gradient(180deg, rgba(15,23,42,0.96) 0%, rgba(7,11,20,0.98) 100%)",
-            border: "1px solid #22304a",
-            boxShadow: "0 30px 80px rgba(0,0,0,0.35)",
+            display: "inline-flex",
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: "rgba(37,99,235,0.12)",
+            border: "1px solid rgba(96,165,250,0.18)",
+            color: "#bfdbfe",
+            fontWeight: 800,
+            fontSize: 12,
+            marginBottom: 18,
+            textTransform: "uppercase",
           }}
         >
-          <div
+          Entrar
+        </div>
+
+        <h1
+          style={{
+            fontSize: 40,
+            lineHeight: 1.04,
+            letterSpacing: -1.2,
+            fontWeight: 900,
+            margin: 0,
+          }}
+        >
+          Entre na sua conta VALORA
+        </h1>
+
+        <p
+          style={{
+            marginTop: 14,
+            marginBottom: 24,
+            color: "rgba(255,255,255,0.66)",
+            lineHeight: 1.8,
+            fontSize: 15,
+          }}
+        >
+          Acesse seu CRM, sua assinatura e suas preferências de operação.
+        </p>
+
+        <form onSubmit={handleLogin} style={{ display: "grid", gap: 14 }}>
+          <input
+            type="email"
+            placeholder="Seu e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={inputStyle}
+          />
+
+          <input
+            type="password"
+            placeholder="Sua senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
+          />
+
+          {error ? (
+            <div
+              style={{
+                color: "#fda4af",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
             style={{
-              fontSize: 34,
+              minHeight: 52,
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              color: "#fff",
               fontWeight: 900,
-              letterSpacing: -0.8,
-              marginBottom: 8,
+              fontSize: 15,
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.7 : 1,
+              boxShadow: "0 20px 50px rgba(37,99,235,0.28)",
             }}
           >
-            Entrar
-          </div>
+            {loading ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
 
-          <div
+        <div
+          style={{
+            marginTop: 18,
+            color: "rgba(255,255,255,0.58)",
+            fontSize: 14,
+          }}
+        >
+          Ainda não tem conta?{" "}
+          <Link
+            href="/signup"
             style={{
-              color: "#94a3b8",
-              lineHeight: 1.7,
-              marginBottom: 22,
+              color: "#bfdbfe",
+              fontWeight: 800,
             }}
           >
-            Use seu email e sua senha para acessar sua conta.
-          </div>
-
-          <form onSubmit={handleLogin} style={{ display: "grid", gap: 14 }}>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  color: "#cbd5e1",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  marginBottom: 8,
-                }}
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@empresa.com"
-                required
-                style={{
-                  width: "100%",
-                  padding: "14px 15px",
-                  borderRadius: 14,
-                  border: "1px solid #334155",
-                  background: "#0b1220",
-                  color: "#f8fafc",
-                  outline: "none",
-                  fontSize: 15,
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  color: "#cbd5e1",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  marginBottom: 8,
-                }}
-              >
-                Senha
-              </label>
-
-              <div style={{ position: "relative" }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Sua senha"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "14px 110px 14px 15px",
-                    borderRadius: 14,
-                    border: "1px solid #334155",
-                    background: "#0b1220",
-                    color: "#f8fafc",
-                    outline: "none",
-                    fontSize: 15,
-                  }}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((current) => !current)}
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    border: "1px solid #334155",
-                    background: "rgba(15,23,42,0.85)",
-                    color: "#cbd5e1",
-                    borderRadius: 10,
-                    padding: "8px 10px",
-                    fontWeight: 800,
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
-                >
-                  {showPassword ? "Ocultar" : "Mostrar"}
-                </button>
-              </div>
-            </div>
-
-            {error ? (
-              <div
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  background: "rgba(127,29,29,0.3)",
-                  border: "1px solid #7f1d1d",
-                  color: "#fecaca",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
-                {error}
-              </div>
-            ) : null}
-
-            {success ? (
-              <div
-                style={{
-                  padding: "12px 14px",
-                  borderRadius: 14,
-                  background: "rgba(20,83,45,0.28)",
-                  border: "1px solid #166534",
-                  color: "#bbf7d0",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
-                {success}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                marginTop: 4,
-                width: "100%",
-                padding: "15px 18px",
-                borderRadius: 14,
-                border: "none",
-                background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-                color: "#fff",
-                fontWeight: 900,
-                fontSize: 16,
-                cursor: "pointer",
-                boxShadow: "0 18px 35px rgba(37,99,235,0.28)",
-                opacity: loading ? 0.8 : 1,
-              }}
-            >
-              {loading ? "Entrando..." : "Entrar no FlowCRM"}
-            </button>
-          </form>
-
-          <div
-            style={{
-              marginTop: 18,
-              color: "#94a3b8",
-              fontSize: 14,
-              lineHeight: 1.7,
-            }}
-          >
-            Ainda não tem conta?{" "}
-            <Link
-              href="/signup"
-              style={{
-                color: "#93c5fd",
-                textDecoration: "none",
-                fontWeight: 800,
-              }}
-            >
-              Criar conta
-            </Link>
-          </div>
+            Criar conta
+          </Link>
         </div>
       </div>
     </div>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  minHeight: 50,
+  padding: "0 14px",
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "#fff",
+  outline: "none",
+  fontSize: 14,
+};
