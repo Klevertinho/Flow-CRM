@@ -1,119 +1,124 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Button, Card, Input } from "@/components/ui";
 
-type HistoryItem = {
-  text: string;
-  time: number;
-};
-
 type Lead = {
-  id: number;
+  id: string;
   name: string;
-  createdAt: number;
-  lastContact: number;
-  history: HistoryItem[];
+  created_at: string;
+  last_contact: string;
 };
 
-export default function DashboardPage() {
-  const [leads, setLeads] = useState<Lead[]>([
-    {
-      id: 1,
-      name: "João Silva",
-      createdAt: Date.now() - 1000 * 60 * 60 * 24 * 2,
-      lastContact: Date.now() - 1000 * 60 * 60 * 2,
-      history: [
-        {
-          text: "Lead criado",
-          time: Date.now() - 1000 * 60 * 60 * 24 * 2,
-        },
-        {
-          text: "Pediu orçamento",
-          time: Date.now() - 1000 * 60 * 60 * 5,
-        },
-      ],
-    },
-  ]);
+type Event = {
+  id: string;
+  text: string;
+  created_at: string;
+};
 
-  const [name, setName] = useState("");
+export default function Page() {
+  const supabase = createClient();
+
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [name, setName] = useState("");
   const [note, setNote] = useState("");
 
-  function addLead() {
+  useEffect(() => {
+    loadLeads();
+  }, []);
+
+  async function loadLeads() {
+    const { data } = await supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setLeads(data || []);
+  }
+
+  async function loadEvents(leadId: string) {
+    const { data } = await supabase
+      .from("lead_events")
+      .select("*")
+      .eq("lead_id", leadId)
+      .order("created_at", { ascending: true });
+
+    setEvents(data || []);
+  }
+
+  async function addLead() {
     if (!name) return;
 
-    const newLead: Lead = {
-      id: Date.now(),
-      name,
-      createdAt: Date.now(),
-      lastContact: Date.now(),
-      history: [{ text: "Lead criado", time: Date.now() }],
-    };
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    setLeads([...leads, newLead]);
-    setName("");
-  }
+    const { data } = await supabase
+      .from("leads")
+      .insert({
+        name,
+        user_id: user?.id,
+      })
+      .select()
+      .single();
 
-  function addNote() {
-    if (!note || !selectedLead) return;
-
-    const updatedLeads = leads.map((lead) => {
-      if (lead.id === selectedLead.id) {
-        return {
-          ...lead,
-          lastContact: Date.now(),
-          history: [
-            ...lead.history,
-            { text: note, time: Date.now() },
-          ],
-        };
-      }
-      return lead;
+    await supabase.from("lead_events").insert({
+      lead_id: data.id,
+      user_id: user?.id,
+      text: "Lead criado",
     });
 
-    setLeads(updatedLeads);
+    setName("");
+    loadLeads();
+  }
 
-    const updated = updatedLeads.find(
-      (l) => l.id === selectedLead.id
-    )!;
+  async function addNote() {
+    if (!note || !selectedLead) return;
 
-    setSelectedLead(updated);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    await supabase.from("lead_events").insert({
+      lead_id: selectedLead.id,
+      user_id: user?.id,
+      text: note,
+    });
+
+    await supabase
+      .from("leads")
+      .update({ last_contact: new Date().toISOString() })
+      .eq("id", selectedLead.id);
+
     setNote("");
+    loadEvents(selectedLead.id);
+    loadLeads();
   }
 
-  function getScore(hours: number) {
-    if (hours < 6) return { label: "Quente", color: "#22c55e" };
-    if (hours < 48) return { label: "Morno", color: "#facc15" };
-    return { label: "Frio", color: "#ef4444" };
+  function openLead(lead: Lead) {
+    setSelectedLead(lead);
+    loadEvents(lead.id);
   }
 
-  function getInsight(hours: number) {
-    if (hours < 6) return "Alta chance de fechamento";
-    if (hours < 48) return "Momento ideal para follow-up";
-    return "Precisa reengajar urgentemente";
-  }
-
-  function formatTime(time: number) {
-    const diff = Math.floor((Date.now() - time) / (1000 * 60 * 60));
+  function formatTime(date: string) {
+    const diff =
+      (Date.now() - new Date(date).getTime()) /
+      (1000 * 60 * 60);
 
     if (diff < 1) return "agora";
-    if (diff < 24) return `${diff}h atrás`;
+    if (diff < 24) return `${Math.floor(diff)}h atrás`;
     return `${Math.floor(diff / 24)}d atrás`;
   }
 
-  function generateMessage(name: string) {
-    return `Fala ${name.split(" ")[0]}, tudo certo? Podemos avançar nisso?`;
-  }
-
   return (
-    <div style={{ display: "grid", gap: 24 }}>
-      {/* HEADER */}
-      <h1 style={{ fontSize: 32, fontWeight: 900 }}>
-        CRM Inteligente
+    <div style={{ display: "grid", gap: 20 }}>
+      <h1 style={{ fontSize: 28, fontWeight: 900 }}>
+        CRM VALORA
       </h1>
 
-      {/* ADD LEAD */}
       <Card>
         <div style={{ display: "flex", gap: 10 }}>
           <Input
@@ -125,47 +130,29 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      {/* LEADS */}
       <Card>
         <div style={{ display: "grid", gap: 12 }}>
-          {leads.map((lead) => {
-            const hours =
-              (Date.now() - lead.lastContact) /
-              (1000 * 60 * 60);
+          {leads.map((lead) => (
+            <div
+              key={lead.id}
+              style={{
+                padding: 12,
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.06)",
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>{lead.name}</div>
 
-            const score = getScore(hours);
-
-            return (
-              <div
-                key={lead.id}
-                style={{
-                  padding: 14,
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800 }}>
-                    {lead.name}
-                  </div>
-                  <div style={{ fontSize: 12, color: score.color }}>
-                    {score.label}
-                  </div>
-                </div>
-
-                <Button onClick={() => setSelectedLead(lead)}>
-                  Abrir
-                </Button>
-              </div>
-            );
-          })}
+              <Button onClick={() => openLead(lead)}>
+                Abrir
+              </Button>
+            </div>
+          ))}
         </div>
       </Card>
 
-      {/* DRAWER */}
       {selectedLead && (
         <div
           onClick={() => setSelectedLead(null)}
@@ -175,123 +162,41 @@ export default function DashboardPage() {
             background: "rgba(0,0,0,0.6)",
             display: "flex",
             justifyContent: "flex-end",
-            zIndex: 50,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: 420,
-              height: "100%",
+              width: 400,
               background: "#020617",
-              padding: 24,
+              padding: 20,
               display: "flex",
               flexDirection: "column",
-              gap: 20,
-              overflowY: "auto",
+              gap: 16,
             }}
           >
-            {/* HEADER */}
-            <h2 style={{ fontWeight: 900 }}>
-              {selectedLead.name}
-            </h2>
-
-            {/* INSIGHT */}
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 10,
-                background: "rgba(47,107,255,0.1)",
-              }}
-            >
-              {getInsight(
-                (Date.now() - selectedLead.lastContact) /
-                  (1000 * 60 * 60)
-              )}
-            </div>
+            <h2>{selectedLead.name}</h2>
 
             {/* TIMELINE */}
             <div>
-              <div style={{ fontWeight: 800, marginBottom: 10 }}>
-                Timeline
-              </div>
-
-              <div style={{ display: "grid", gap: 12 }}>
-                {selectedLead.history.map((item, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      gap: 10,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: "#2F6BFF",
-                        marginTop: 6,
-                      }}
-                    />
-
-                    <div>
-                      <div>{item.text}</div>
-                      <div style={{ fontSize: 12, opacity: 0.5 }}>
-                        {formatTime(item.time)}
-                      </div>
-                    </div>
+              {events.map((e) => (
+                <div key={e.id}>
+                  {e.text}
+                  <div style={{ fontSize: 12 }}>
+                    {formatTime(e.created_at)}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
             {/* ADD NOTE */}
-            <div>
-              <div style={{ fontSize: 12, opacity: 0.6 }}>
-                Nova nota
-              </div>
+            <Input
+              placeholder="Nova nota"
+              value={note}
+              onChange={(e: any) => setNote(e.target.value)}
+            />
 
-              <Input
-                placeholder="Digite uma interação..."
-                value={note}
-                onChange={(e: any) => setNote(e.target.value)}
-              />
-
-              <Button
-                style={{ marginTop: 10 }}
-                onClick={addNote}
-              >
-                Salvar nota
-              </Button>
-            </div>
-
-            {/* MESSAGE */}
-            <div>
-              <div style={{ fontSize: 12, opacity: 0.6 }}>
-                Sugestão
-              </div>
-
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 10,
-                  background: "rgba(255,255,255,0.05)",
-                }}
-              >
-                {generateMessage(selectedLead.name)}
-              </div>
-            </div>
-
-            <Button
-              onClick={() =>
-                navigator.clipboard.writeText(
-                  generateMessage(selectedLead.name)
-                )
-              }
-            >
-              Copiar mensagem
-            </Button>
+            <Button onClick={addNote}>Salvar</Button>
           </div>
         </div>
       )}
