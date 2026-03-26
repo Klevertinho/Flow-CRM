@@ -1,39 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
 
-type Plan = "starter" | "pro";
+type Subscription = {
+  plan: string;
+  status: string;
+  current_period_end: string | null;
+};
 
 export default function BillingPage() {
-  const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
+  const supabase = createClient();
 
-  async function handleSubscribe(plan: Plan) {
-    setLoadingPlan(plan);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [loadingPortal, setLoadingPortal] = useState(false);
+
+  useEffect(() => {
+    loadSubscription();
+  }, []);
+
+  async function loadSubscription() {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("status", "active")
+      .single();
+
+    if (data) {
+      setSubscription(data);
+    }
+  }
+
+  async function handlePortal() {
+    setLoadingPortal(true);
 
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        body: JSON.stringify({ plan }),
-      });
-
+      const res = await fetch("/api/portal", { method: "POST" });
       const data = await res.json();
 
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     }
 
-    setLoadingPlan(null);
+    setLoadingPortal(false);
+  }
+
+  function formatDate(date: string | null) {
+    if (!date) return "-";
+    return new Date(date).toLocaleDateString("pt-BR");
   }
 
   return (
-    <div style={{ display: "grid", gap: 28 }}>
+    <div style={{ display: "grid", gap: 28, maxWidth: 1000 }}>
       {/* HEADER */}
       <Card>
-        <div style={{ maxWidth: 700 }}>
+        <div style={{ maxWidth: 600 }}>
           <div
             style={{
               fontSize: 12,
@@ -43,18 +68,18 @@ export default function BillingPage() {
               marginBottom: 10,
             }}
           >
-            Assinatura
+            Minha conta
           </div>
 
           <h1
             style={{
-              fontSize: 42,
+              fontSize: 40,
               fontWeight: 900,
               letterSpacing: -1,
               marginBottom: 10,
             }}
           >
-            Escolha como você quer crescer
+            Sua assinatura
           </h1>
 
           <p
@@ -64,144 +89,101 @@ export default function BillingPage() {
               fontSize: 16,
             }}
           >
-            Você não está pagando por um CRM.  
-            Está pagando por organização, processo e mais vendas.
+            Gerencie seu plano, acompanhe sua cobrança e mantenha sua operação ativa.
           </p>
         </div>
       </Card>
 
-      {/* PLANOS */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 20,
-        }}
-      >
-        {/* STARTER */}
-        <Card>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 24, fontWeight: 900 }}>Starter</div>
+      {/* STATUS DA ASSINATURA */}
+      <Card>
+        <div style={{ display: "grid", gap: 20 }}>
+          <div>
             <div
               style={{
-                fontSize: 40,
-                fontWeight: 900,
-                marginTop: 8,
-              }}
-            >
-              R$39
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.5)" }}>/mês</div>
-          </div>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>• Leads + histórico</div>
-            <div>• Follow-ups</div>
-            <div>• Organização básica</div>
-          </div>
-
-          <div style={{ marginTop: 20 }}>
-            <Button
-              full
-              onClick={() => handleSubscribe("starter")}
-              disabled={loadingPlan === "starter"}
-            >
-              {loadingPlan === "starter"
-                ? "Carregando..."
-                : "Começar agora"}
-            </Button>
-          </div>
-        </Card>
-
-        {/* PRO */}
-        <Card
-          style={{
-            border: "1px solid rgba(59,130,246,0.4)",
-            boxShadow: "0 20px 60px rgba(37,99,235,0.25)",
-          }}
-        >
-          <div style={{ marginBottom: 20 }}>
-            <div
-              style={{
-                background: "#2563eb",
-                padding: "4px 10px",
-                borderRadius: 999,
                 fontSize: 12,
+                color: "rgba(255,255,255,0.45)",
                 fontWeight: 800,
-                display: "inline-block",
-                marginBottom: 10,
+                textTransform: "uppercase",
+                marginBottom: 6,
               }}
             >
-              MAIS ESCOLHIDO
+              Plano atual
             </div>
 
-            <div style={{ fontSize: 24, fontWeight: 900 }}>Pro</div>
             <div
               style={{
-                fontSize: 44,
+                fontSize: 28,
                 fontWeight: 900,
-                marginTop: 8,
               }}
             >
-              R$79
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.5)" }}>/mês</div>
-          </div>
-
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>• Tudo do Starter</div>
-            <div>• Melhor estrutura comercial</div>
-            <div>• Mais controle e clareza</div>
-            <div>• Base para IA</div>
-          </div>
-
-          <div style={{ marginTop: 20 }}>
-            <Button
-              full
-              onClick={() => handleSubscribe("pro")}
-              disabled={loadingPlan === "pro"}
-            >
-              {loadingPlan === "pro"
-                ? "Carregando..."
-                : "Assinar Pro"}
-            </Button>
-          </div>
-        </Card>
-
-        {/* EMPRESA */}
-        <Card>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 24, fontWeight: 900 }}>Equipe</div>
-            <div
-              style={{
-                fontSize: 32,
-                fontWeight: 900,
-                marginTop: 8,
-              }}
-            >
-              Sob consulta
+              {subscription?.plan || "Starter"}
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: 10 }}>
-            <div>• Múltiplos usuários</div>
-            <div>• Estrutura maior</div>
-            <div>• Personalização futura</div>
+          <div
+            style={{
+              display: "flex",
+              gap: 30,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.45)",
+                  marginBottom: 6,
+                }}
+              >
+                Status
+              </div>
+
+              <div
+                style={{
+                  fontWeight: 800,
+                  color:
+                    subscription?.status === "active"
+                      ? "#22c55e"
+                      : "#f87171",
+                }}
+              >
+                {subscription?.status === "active"
+                  ? "Ativo"
+                  : "Inativo"}
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.45)",
+                  marginBottom: 6,
+                }}
+              >
+                Próxima cobrança
+              </div>
+
+              <div style={{ fontWeight: 800 }}>
+                {formatDate(subscription?.current_period_end || null)}
+              </div>
+            </div>
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <Button onClick={handlePortal} disabled={loadingPortal}>
+              {loadingPortal ? "Carregando..." : "Gerenciar assinatura"}
+            </Button>
+
             <Button
-              full
-              onClick={() =>
-                (window.location.href =
-                  "mailto:klevertons.a74@gmail.com")
-              }
+              variant="secondary"
+              onClick={() => (window.location.href = "/")}
             >
-              Falar com a VALORA
+              Ver planos
             </Button>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
       {/* CONFIANÇA */}
       <Card>
@@ -221,16 +203,16 @@ export default function BillingPage() {
           </div>
 
           <div>
-            <div style={{ fontWeight: 800 }}>Sem contrato</div>
+            <div style={{ fontWeight: 800 }}>Controle total</div>
             <div style={{ color: "rgba(255,255,255,0.5)" }}>
-              Cancele quando quiser
+              Atualize ou cancele quando quiser
             </div>
           </div>
 
           <div>
-            <div style={{ fontWeight: 800 }}>Comece em minutos</div>
+            <div style={{ fontWeight: 800 }}>Sem burocracia</div>
             <div style={{ color: "rgba(255,255,255,0.5)" }}>
-              Sem burocracia
+              Tudo simples e direto
             </div>
           </div>
         </div>
