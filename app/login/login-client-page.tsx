@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginClientPage() {
@@ -18,42 +18,13 @@ export default function LoginClientPage() {
     setError("");
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (signInError) {
         throw signInError;
-      }
-
-      const user = data.user;
-
-      if (!user) {
-        throw new Error("Usuário não encontrado após login.");
-      }
-
-      const { data: subscription } = await supabase
-        .from("subscriptions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (!subscription) {
-        window.location.href = "/?plans=1";
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!profile?.onboarding_completed) {
-        window.location.href = "/onboarding";
-        return;
       }
 
       window.location.href = "/app";
@@ -201,7 +172,7 @@ export default function LoginClientPage() {
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: "100%",
   minHeight: 50,
   padding: "0 14px",

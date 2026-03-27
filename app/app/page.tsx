@@ -17,7 +17,7 @@ export default async function CRMPage() {
     .from("subscriptions")
     .select("id, status")
     .eq("user_id", user.id)
-    .eq("status", "active")
+    .in("status", ["active", "trialing"])
     .maybeSingle();
 
   if (!subscription) {
