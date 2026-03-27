@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,11 +14,11 @@ function HeaderButton({
   onClick,
 }: {
   href?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   primary?: boolean;
   onClick?: () => void;
 }) {
-  const style: React.CSSProperties = {
+  const style: CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -34,7 +34,7 @@ function HeaderButton({
       : "rgba(255,255,255,0.04)",
     color: "#fff",
     boxShadow: primary ? "0 20px 50px rgba(37,99,235,0.30)" : "none",
-    transition: "transform .18s ease",
+    transition: "transform .18s ease, box-shadow .18s ease",
     cursor: "pointer",
   };
 
@@ -72,7 +72,7 @@ function HeaderButton({
   );
 }
 
-function SectionTag({ children }: { children: React.ReactNode }) {
+function SectionTag({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
@@ -105,9 +105,11 @@ function SectionTag({ children }: { children: React.ReactNode }) {
 function GlassCard({
   children,
   highlighted,
+  style,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   highlighted?: boolean;
+  style?: CSSProperties;
 }) {
   return (
     <div
@@ -124,6 +126,7 @@ function GlassCard({
           ? "0 32px 90px rgba(37,99,235,0.18)"
           : "0 22px 60px rgba(0,0,0,0.22)",
         backdropFilter: "blur(12px)",
+        ...style,
       }}
     >
       {children}
@@ -167,7 +170,6 @@ function MetricChip({
         style={{
           fontSize: 30,
           fontWeight: 900,
-          letterSpacing: -0.8,
           color: accent || "#fff",
         }}
       >
@@ -272,57 +274,6 @@ function StepCard({
       </div>
     </GlassCard>
   );
-} 
-
-function BenefitCard({
-  title,
-  text,
-  icon,
-}: {
-  title: string;
-  text: string;
-  icon: string;
-}) {
-  return (
-    <GlassCard>
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 14,
-          display: "grid",
-          placeItems: "center",
-          background: "rgba(37,99,235,0.14)",
-          border: "1px solid rgba(96,165,250,0.16)",
-          fontSize: 18,
-          marginBottom: 16,
-        }}
-      >
-        {icon}
-      </div>
-
-      <div
-        style={{
-          fontWeight: 900,
-          fontSize: 22,
-          color: "#fff",
-          marginBottom: 10,
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          color: "rgba(255,255,255,0.68)",
-          lineHeight: 1.8,
-          fontSize: 15,
-        }}
-      >
-        {text}
-      </div>
-    </GlassCard>
-  );
 }
 
 function PricingCard({
@@ -350,6 +301,8 @@ function PricingCard({
   isHighlightedByQuery?: boolean;
   loading?: boolean;
 }) {
+  const isStrong = highlighted || isHighlightedByQuery;
+
   return (
     <div
       style={{
@@ -357,17 +310,14 @@ function PricingCard({
         transition: "transform .25s ease",
       }}
     >
-      <GlassCard highlighted={highlighted || isHighlightedByQuery}>
+      <GlassCard highlighted={isStrong}>
         {badge ? (
           <div
             style={{
               display: "inline-flex",
               padding: "8px 14px",
               borderRadius: 999,
-              background:
-                highlighted || isHighlightedByQuery
-                  ? "#2563eb"
-                  : "rgba(255,255,255,0.08)",
+              background: isStrong ? "#2563eb" : "rgba(255,255,255,0.08)",
               color: "#fff",
               fontWeight: 800,
               fontSize: 12,
@@ -463,14 +413,10 @@ function PricingCard({
             width: "100%",
             minHeight: 54,
             borderRadius: 16,
-            border:
-              highlighted || isHighlightedByQuery
-                ? "none"
-                : "1px solid rgba(255,255,255,0.14)",
-            background:
-              highlighted || isHighlightedByQuery
-                ? "linear-gradient(135deg,#3b82f6 0%, #2563eb 100%)"
-                : "rgba(255,255,255,0.05)",
+            border: isStrong ? "none" : "1px solid rgba(255,255,255,0.14)",
+            background: isStrong
+              ? "linear-gradient(135deg,#3b82f6 0%, #2563eb 100%)"
+              : "rgba(255,255,255,0.05)",
             color: "#fff",
             fontWeight: 900,
             fontSize: 15,
@@ -559,6 +505,7 @@ export default function LandingClientPage() {
   const searchParams = useSearchParams();
 
   const pricingRef = useRef<HTMLElement | null>(null);
+
   const [pricingPulse, setPricingPulse] = useState(false);
   const [activeMockTab, setActiveMockTab] = useState<"today" | "pipeline" | "ai">("today");
   const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
@@ -681,11 +628,11 @@ export default function LandingClientPage() {
     }
   }
 
-  const goToPricing = () => {
+  function goToPricing() {
     pricingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setPricingPulse(true);
     window.setTimeout(() => setPricingPulse(false), 1100);
-  };
+  }
 
   const mockContent = useMemo(() => {
     if (activeMockTab === "today") {
@@ -694,6 +641,7 @@ export default function LandingClientPage() {
           <MetricChip label="Leads ativos" value="28" />
           <MetricChip label="Follow-ups vencidos" value="4" accent="#fda4af" />
           <MetricChip label="Negócios quentes" value="7" accent="#86efac" />
+
           <div
             style={{
               marginTop: 14,
@@ -893,7 +841,6 @@ export default function LandingClientPage() {
               style={{
                 fontWeight: 900,
                 fontSize: 24,
-                letterSpacing: -0.7,
               }}
             >
               VALORA
@@ -910,13 +857,7 @@ export default function LandingClientPage() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {isLoggedIn ? (
             <>
               <HeaderButton href="/logout">Sair</HeaderButton>
@@ -1012,9 +953,18 @@ export default function LandingClientPage() {
             }}
           >
             {[
-              ["Mais clareza", "Veja quem precisa de ação hoje e o que está travando sua operação."],
-              ["Mais processo", "Pare de depender da memória e das conversas perdidas no WhatsApp."],
-              ["Mais fechamento", "Fale na hora certa, com prioridade e contexto para vender mais."],
+              [
+                "Mais clareza",
+                "Veja quem precisa de ação hoje e o que está travando sua operação.",
+              ],
+              [
+                "Mais processo",
+                "Pare de depender da memória e das conversas perdidas no WhatsApp.",
+              ],
+              [
+                "Mais fechamento",
+                "Fale na hora certa, com prioridade e contexto para vender mais.",
+              ],
             ].map(([title, text]) => (
               <GlassCard key={title}>
                 <div
@@ -1101,163 +1051,34 @@ export default function LandingClientPage() {
           }}
         >
           {[
-            ["Sem conversa perdida", "Centralize histórico, contexto e prioridade no mesmo lugar.", "💬"],
-            ["Follow-up no timing certo", "Saiba com quem falar agora antes da oportunidade esfriar.", "⏱️"],
-            ["Mais imagem de profissionalismo", "Troque improviso por processo e confiança comercial.", "🛡️"],
-            ["Base pronta para IA", "Estruture sua operação para receber camadas de inteligência depois.", "🧠"],
+            [
+              "Sem conversa perdida",
+              "Centralize histórico, contexto e prioridade no mesmo lugar.",
+              "💬",
+            ],
+            [
+              "Follow-up no timing certo",
+              "Saiba com quem falar agora antes da oportunidade esfriar.",
+              "⏱️",
+            ],
+            [
+              "Mais imagem de profissionalismo",
+              "Troque improviso por processo e confiança comercial.",
+              "🛡️",
+            ],
+            [
+              "Base pronta para IA",
+              "Estruture sua operação para receber camadas de inteligência depois.",
+              "🧠",
+            ],
           ].map(([title, text, icon]) => (
-            <BenefitCard key={title} title={title} text={text} icon={icon} />
+            <BenefitCard
+              key={title}
+              title={title}
+              text={text}
+              icon={icon}
+            />
           ))}
-        </div>
-      </section>
-
-      <section
-        style={{
-          maxWidth: 1160,
-          margin: "0 auto",
-          padding: "10px 20px 64px",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 920,
-            margin: "0 auto 34px",
-            textAlign: "center",
-          }}
-        >
-          <SectionTag>O que o cliente sente quando usa</SectionTag>
-
-          <h2
-            style={{
-              marginTop: 18,
-              fontSize: "clamp(36px, 5vw, 58px)",
-              lineHeight: 1.04,
-              fontWeight: 900,
-            }}
-          >
-            Não é só um CRM. É uma operação com mais inteligência.
-          </h2>
-
-          <p
-            style={{
-              marginTop: 14,
-              color: "rgba(255,255,255,0.68)",
-              fontSize: 19,
-              lineHeight: 1.8,
-            }}
-          >
-            A pessoa não compra mais uma ferramenta. Ela compra a sensação de finalmente ter controle sobre o próprio comercial.
-          </p>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 24,
-          }}
-        >
-          <GlassCard>
-            <div
-              style={{
-                display: "inline-flex",
-                padding: "8px 12px",
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.78)",
-                fontWeight: 800,
-                fontSize: 12,
-                textTransform: "uppercase",
-                marginBottom: 16,
-              }}
-            >
-              Antes
-            </div>
-
-            <div
-              style={{
-                color: "#fff",
-                fontSize: 30,
-                fontWeight: 900,
-                marginBottom: 16,
-              }}
-            >
-              Venda no improviso
-            </div>
-
-            <div style={{ display: "grid", gap: 12 }}>
-              {[
-                "Lead quente misturado com conversa velha",
-                "Follow-up esquecido por falta de rotina",
-                "Sem visão clara do que precisa ser feito hoje",
-                "Decisão comercial baseada em memória",
-              ].map((line) => (
-                <div
-                  key={line}
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    color: "rgba(255,255,255,0.76)",
-                    lineHeight: 1.7,
-                  }}
-                >
-                  <span style={{ color: "#fca5a5" }}>•</span>
-                  <span>{line}</span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-
-          <GlassCard highlighted>
-            <div
-              style={{
-                display: "inline-flex",
-                padding: "8px 12px",
-                borderRadius: 999,
-                background: "rgba(37,99,235,0.18)",
-                color: "#bfdbfe",
-                fontWeight: 800,
-                fontSize: 12,
-                textTransform: "uppercase",
-                marginBottom: 16,
-              }}
-            >
-              Depois
-            </div>
-
-            <div
-              style={{
-                color: "#fff",
-                fontSize: 30,
-                fontWeight: 900,
-                marginBottom: 16,
-              }}
-            >
-              Operação com clareza
-            </div>
-
-            <div style={{ display: "grid", gap: 12 }}>
-              {[
-                "Cada lead com histórico e próxima ação",
-                "Prioridade clara para agir no tempo certo",
-                "Mais processo, menos perda por desorganização",
-                "Muito mais confiança para vender sem improviso",
-              ].map((line) => (
-                <div
-                  key={line}
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    color: "rgba(255,255,255,0.82)",
-                    lineHeight: 1.7,
-                  }}
-                >
-                  <span style={{ color: "#60a5fa" }}>✓</span>
-                  <span>{line}</span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
         </div>
       </section>
 
@@ -1302,4 +1123,240 @@ export default function LandingClientPage() {
             text="Adicione o contato e registre contexto sem depender de memória ou conversa solta."
           />
           <StepCard
-           
+            number="2"
+            title="Organize o pipeline"
+            text="Visualize prioridade, momento do lead e quem precisa de ação antes da oportunidade esfriar."
+          />
+          <StepCard
+            number="3"
+            title="Siga o processo"
+            text="Faça follow-ups, mantenha histórico e transforme seu comercial em algo previsível."
+          />
+        </div>
+      </section>
+
+      <section
+        ref={pricingRef}
+        style={{
+          maxWidth: 1260,
+          margin: "0 auto",
+          padding: "0 20px 84px",
+          transform: pricingPulse ? "scale(1.01)" : "scale(1)",
+          transition: "transform .35s ease",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 900,
+            margin: "0 auto 34px",
+            textAlign: "center",
+          }}
+        >
+          <SectionTag>Planos</SectionTag>
+
+          <h2
+            style={{
+              marginTop: 18,
+              fontSize: "clamp(36px, 5vw, 60px)",
+              lineHeight: 1.03,
+              fontWeight: 900,
+            }}
+          >
+            Escolha o plano que acompanha o ritmo da sua operação
+          </h2>
+
+          <p
+            style={{
+              marginTop: 14,
+              color: "rgba(255,255,255,0.68)",
+              fontSize: 19,
+              lineHeight: 1.8,
+            }}
+          >
+            Você não precisa de um sistema complexo. Precisa de um sistema que te faça vender melhor, com menos desperdício e mais controle.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0,1fr))",
+            gap: 24,
+            alignItems: "stretch",
+          }}
+        >
+          <PricingCard
+            title="Starter"
+            price="R$ 39"
+            subtitle="Para quem quer sair do caos e começar a organizar leads, follow-ups e rotina de vendas sem complicação."
+            features={[
+              "1 conta com acesso completo",
+              "Leads + histórico + follow-ups",
+              "Visão de prioridade comercial",
+              "Base pronta para crescer com o produto",
+            ]}
+            cta="Começar no Starter"
+            onClick={() => void handlePlanClick("starter")}
+            footnote="Ideal para operação individual"
+            isHighlightedByQuery={highlightedPlanFromQuery === "starter"}
+            loading={loadingPlan === "starter"}
+          />
+
+          <PricingCard
+            title="Pro"
+            price="R$ 79"
+            subtitle="Para quem quer mais percepção de valor, mais estrutura comercial e um plano melhor para crescer sem improviso."
+            features={[
+              "Tudo do Starter",
+              "Melhor posicionamento para operação séria",
+              "Mais espaço para evolução e recursos futuros",
+              "Plano mais forte para quem quer profissionalizar o comercial",
+            ]}
+            cta="Assinar o Pro"
+            highlighted
+            badge="Mais recomendado"
+            onClick={() => void handlePlanClick("pro")}
+            footnote="Mais escolhido por quem quer crescer"
+            isHighlightedByQuery={highlightedPlanFromQuery === "pro"}
+            loading={loadingPlan === "pro"}
+          />
+
+          <PricingCard
+            title="Equipe"
+            price="Sob consulta"
+            subtitle="Para operação maior, múltiplos usuários, necessidades específicas e evolução sob medida."
+            features={[
+              "Estrutura comercial maior",
+              "Possível personalização futura",
+              "Suporte mais próximo da operação",
+              "Melhor caminho para ticket maior",
+            ]}
+            cta="Falar com a VALORA"
+            onClick={() => {
+              window.location.href =
+                "mailto:klevertons.a74@gmail.com?subject=Quero o plano Equipe da VALORA";
+            }}
+            footnote="Para empresas com necessidade sob medida"
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            textAlign: "center",
+            color: "rgba(255,255,255,0.48)",
+            fontSize: 13,
+          }}
+        >
+          Pagamento seguro via Stripe • Cancele quando quiser • Sem burocracia para começar
+        </div>
+      </section>
+
+      <section
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          padding: "0 20px 78px",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 760,
+            margin: "0 auto 24px",
+            textAlign: "center",
+          }}
+        >
+          <SectionTag>Objeções que travam compra</SectionTag>
+
+          <h2
+            style={{
+              marginTop: 18,
+              fontSize: "clamp(34px, 5vw, 54px)",
+              lineHeight: 1.06,
+              fontWeight: 900,
+            }}
+          >
+            O cliente não precisa só gostar. Precisa confiar.
+          </h2>
+        </div>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <FaqItem
+            question="Isso serve pra quem vende pelo WhatsApp?"
+            answer="Sim. O produto foi pensado justamente para operações que conversam muito, perdem timing e precisam organizar follow-up com mais clareza."
+          />
+          <FaqItem
+            question="Preciso ser uma empresa grande para usar?"
+            answer="Não. O Starter já atende autônomos, pequenos negócios e operações enxutas que querem vender melhor sem depender da memória."
+          />
+          <FaqItem
+            question="É difícil começar?"
+            answer="Não. A proposta é ser simples o suficiente para usar hoje e forte o suficiente para acompanhar seu crescimento depois."
+          />
+          <FaqItem
+            question="Posso cancelar quando quiser?"
+            answer="Sim. O pagamento é feito com segurança e o cancelamento pode ser feito sem burocracia."
+          />
+        </div>
+      </section>
+
+      <section
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          padding: "0 20px 120px",
+        }}
+      >
+        <GlassCard highlighted>
+          <div style={{ textAlign: "center" }}>
+            <h2
+              style={{
+                fontSize: "clamp(34px, 5vw, 58px)",
+                lineHeight: 1.04,
+                fontWeight: 900,
+                marginBottom: 14,
+              }}
+            >
+              Menos conversa perdida. Mais processo. Mais fechamento.
+            </h2>
+
+            <p
+              style={{
+                maxWidth: 760,
+                margin: "0 auto 24px",
+                color: "rgba(255,255,255,0.74)",
+                fontSize: 18,
+                lineHeight: 1.8,
+              }}
+            >
+              O cliente não quer mais uma ferramenta bonita. Ele quer a sensação de que finalmente encontrou uma solução que organiza o comercial e faz a operação andar.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 14,
+                flexWrap: "wrap",
+              }}
+            >
+              <HeaderButton onClick={goToPricing} primary>
+                Ver planos e começar
+              </HeaderButton>
+
+              {isLoggedIn ? (
+                hasActiveSubscription ? (
+                  <HeaderButton href="/app">Ir para o CRM</HeaderButton>
+                ) : (
+                  <HeaderButton href="/logout">Trocar de conta</HeaderButton>
+                )
+              ) : (
+                <HeaderButton href="/login">Já tenho conta</HeaderButton>
+              )}
+            </div>
+          </div>
+        </GlassCard>
+      </section>
+    </div>
+  );
+}
