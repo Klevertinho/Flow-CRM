@@ -44,21 +44,46 @@ export default function OnboardingClient() {
         throw new Error("Sessão inválida. Faça login novamente.");
       }
 
-      const { error: saveError } = await supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          business_type: business,
-          lead_source: source,
-          onboarding_completed: true,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "id",
-        }
-      );
+      const payload = {
+        id: user.id,
+        business_type: business,
+        lead_source: source,
+        onboarding_completed: true,
+        updated_at: new Date().toISOString(),
+      };
 
-      if (saveError) {
-        throw saveError;
+      const { data: existingProfile, error: existingProfileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (existingProfileError) {
+        throw new Error(existingProfileError.message);
+      }
+
+      if (existingProfile?.id) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            business_type: payload.business_type,
+            lead_source: payload.lead_source,
+            onboarding_completed: payload.onboarding_completed,
+            updated_at: payload.updated_at,
+          })
+          .eq("id", user.id);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert(payload);
+
+        if (insertError) {
+          throw new Error(insertError.message);
+        }
       }
 
       window.location.href = "/app";
