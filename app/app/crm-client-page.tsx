@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Card, Input, TextArea } from "@/components/ui";
 
 type Lead = {
   id: string;
@@ -21,9 +20,33 @@ type LeadEvent = {
 function scoreLead(date: string) {
   const hours = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60);
 
-  if (hours < 6) return { label: "Quente", color: "#22c55e", rank: 3 };
-  if (hours < 48) return { label: "Morno", color: "#facc15", rank: 2 };
-  return { label: "Frio", color: "#ef4444", rank: 1 };
+  if (hours < 6) {
+    return {
+      label: "Quente",
+      color: "#22c55e",
+      soft: "rgba(34,197,94,0.12)",
+      border: "rgba(34,197,94,0.28)",
+      rank: 3,
+    };
+  }
+
+  if (hours < 48) {
+    return {
+      label: "Morno",
+      color: "#f59e0b",
+      soft: "rgba(245,158,11,0.12)",
+      border: "rgba(245,158,11,0.28)",
+      rank: 2,
+    };
+  }
+
+  return {
+    label: "Frio",
+    color: "#ef4444",
+    soft: "rgba(239,68,68,0.12)",
+    border: "rgba(239,68,68,0.28)",
+    rank: 1,
+  };
 }
 
 function formatRelative(date: string) {
@@ -40,7 +63,7 @@ function nextActionForLead(date: string) {
   const hours = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60);
 
   if (hours < 6) return "Acompanhar resposta enquanto o interesse ainda está alto";
-  if (hours < 48) return "Enviar follow-up agora para não perder timing";
+  if (hours < 48) return "Enviar follow-up agora para não perder o timing";
   return "Retomar contato antes que esse lead esfrie de vez";
 }
 
@@ -49,7 +72,64 @@ function generateMessage(name: string) {
   return `Fala ${firstName}, tudo certo? Vi que conversamos sobre isso e queria te ajudar a avançar. Quer que eu te mostre o melhor próximo passo?`;
 }
 
-function MetricCard({
+function DashboardCard({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: 24,
+        padding: 22,
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 24px 70px rgba(0,0,0,0.28)",
+        backdropFilter: "blur(12px)",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Badge({
+  children,
+  color,
+  background,
+  border,
+}: {
+  children: React.ReactNode;
+  color: string;
+  background: string;
+  border: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 30,
+        padding: "0 12px",
+        borderRadius: 999,
+        fontWeight: 800,
+        fontSize: 12,
+        color,
+        background,
+        border: `1px solid ${border}`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function TopMetric({
   label,
   value,
   help,
@@ -61,15 +141,15 @@ function MetricCard({
   accent?: string;
 }) {
   return (
-    <Card>
+    <DashboardCard>
       <div
         style={{
-          color: "rgba(255,255,255,0.52)",
+          color: "rgba(255,255,255,0.48)",
           fontSize: 12,
           fontWeight: 800,
           textTransform: "uppercase",
+          marginBottom: 12,
           letterSpacing: 0.4,
-          marginBottom: 10,
         }}
       >
         {label}
@@ -77,9 +157,9 @@ function MetricCard({
 
       <div
         style={{
-          fontSize: 34,
+          fontSize: 38,
+          lineHeight: 1,
           fontWeight: 900,
-          letterSpacing: -1,
           color: accent || "#fff",
           marginBottom: 10,
         }}
@@ -89,14 +169,14 @@ function MetricCard({
 
       <div
         style={{
-          color: "rgba(255,255,255,0.62)",
-          lineHeight: 1.7,
+          color: "rgba(255,255,255,0.60)",
           fontSize: 14,
+          lineHeight: 1.7,
         }}
       >
         {help}
       </div>
-    </Card>
+    </DashboardCard>
   );
 }
 
@@ -106,9 +186,11 @@ export default function CRMClientPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [events, setEvents] = useState<LeadEvent[]>([]);
+
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [note, setNote] = useState("");
+
   const [savingLead, setSavingLead] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -237,6 +319,10 @@ export default function CRMClientPage() {
     (lead) => scoreLead(lead.last_contact).label === "Frio"
   ).length;
 
+  const warmLeads = leads.filter(
+    (lead) => scoreLead(lead.last_contact).label === "Morno"
+  ).length;
+
   const priorityLeads = useMemo(() => {
     return [...leads]
       .sort(
@@ -252,384 +338,459 @@ export default function CRMClientPage() {
     : null;
 
   return (
-    <div style={{ display: "grid", gap: 24 }}>
+    <div
+      style={{
+        minHeight: "100%",
+        color: "#f8fafc",
+      }}
+    >
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1.08fr 0.92fr",
           gap: 24,
-          alignItems: "start",
         }}
       >
-        <Card
+        <div
           style={{
-            padding: 26,
+            display: "grid",
+            gridTemplateColumns: "1.08fr 0.92fr",
+            gap: 24,
+            alignItems: "start",
           }}
         >
+          <DashboardCard style={{ padding: 28 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                padding: "8px 12px",
+                borderRadius: 999,
+                background: "rgba(37,99,235,0.12)",
+                border: "1px solid rgba(96,165,250,0.18)",
+                color: "#bfdbfe",
+                fontWeight: 800,
+                fontSize: 12,
+                marginBottom: 18,
+                textTransform: "uppercase",
+              }}
+            >
+              Operação comercial com mais clareza
+            </div>
+
+            <h1
+              style={{
+                fontSize: "clamp(34px, 4vw, 58px)",
+                lineHeight: 1.02,
+                fontWeight: 900,
+                margin: 0,
+                marginBottom: 14,
+                maxWidth: 860,
+              }}
+            >
+              Seu comercial precisa de processo, não de memória.
+            </h1>
+
+            <p
+              style={{
+                margin: 0,
+                color: "rgba(255,255,255,0.68)",
+                fontSize: 17,
+                lineHeight: 1.8,
+                maxWidth: 740,
+              }}
+            >
+              Veja quem precisa de atenção hoje, registre contexto e transforme
+              follow-up perdido em rotina comercial séria.
+            </p>
+
+            <div
+              style={{
+                marginTop: 22,
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+              }}
+            >
+              <Badge
+                color="#bfdbfe"
+                background="rgba(37,99,235,0.14)"
+                border="rgba(96,165,250,0.20)"
+              >
+                IA preparada
+              </Badge>
+
+              <Badge
+                color="#c4b5fd"
+                background="rgba(139,92,246,0.14)"
+                border="rgba(167,139,250,0.22)"
+              >
+                CRM adaptável
+              </Badge>
+
+              <Badge
+                color="#93c5fd"
+                background="rgba(255,255,255,0.04)"
+                border="rgba(255,255,255,0.08)"
+              >
+                Fluxo profissional
+              </Badge>
+            </div>
+          </DashboardCard>
+
+          <DashboardCard>
+            <div
+              style={{
+                color: "rgba(255,255,255,0.48)",
+                fontSize: 12,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                marginBottom: 14,
+                letterSpacing: 0.4,
+              }}
+            >
+              Prioridade do dia
+            </div>
+
+            <div style={{ display: "grid", gap: 12 }}>
+              {priorityLeads.length === 0 ? (
+                <div
+                  style={{
+                    color: "rgba(255,255,255,0.58)",
+                    lineHeight: 1.8,
+                    fontSize: 14,
+                  }}
+                >
+                  Nenhum lead ainda. Adicione o primeiro contato para começar a usar o CRM de verdade.
+                </div>
+              ) : (
+                priorityLeads.map((lead) => {
+                  const score = scoreLead(lead.last_contact);
+
+                  return (
+                    <div
+                      key={lead.id}
+                      style={{
+                        borderRadius: 18,
+                        padding: 14,
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            color: "#fff",
+                            fontWeight: 800,
+                            fontSize: 15,
+                          }}
+                        >
+                          {lead.name}
+                        </div>
+
+                        <Badge
+                          color={score.color}
+                          background={score.soft}
+                          border={score.border}
+                        >
+                          {score.label}
+                        </Badge>
+                      </div>
+
+                      <div
+                        style={{
+                          color: "rgba(255,255,255,0.60)",
+                          fontSize: 13,
+                          lineHeight: 1.7,
+                        }}
+                      >
+                        {nextActionForLead(lead.last_contact)}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </DashboardCard>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0,1fr))",
+            gap: 16,
+          }}
+        >
+          <TopMetric
+            label="Leads"
+            value={totalLeads}
+            help="Base comercial atualmente disponível para operação."
+          />
+
+          <TopMetric
+            label="Quentes"
+            value={hotLeads}
+            help="Leads com maior chance de avanço imediato."
+            accent="#86efac"
+          />
+
+          <TopMetric
+            label="Mornos"
+            value={warmLeads}
+            help="Leads que precisam de follow-up no timing certo."
+            accent="#fcd34d"
+          />
+
+          <TopMetric
+            label="Frios"
+            value={coldLeads}
+            help="Leads que pedem retomada antes de morrerem."
+            accent="#fca5a5"
+          />
+        </div>
+
+        <DashboardCard>
           <div
             style={{
-              display: "inline-flex",
-              padding: "8px 12px",
-              borderRadius: 999,
-              background: "rgba(37,99,235,0.12)",
-              border: "1px solid rgba(96,165,250,0.18)",
-              color: "#bfdbfe",
-              fontWeight: 800,
-              fontSize: 12,
-              marginBottom: 18,
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 14,
+              alignItems: "center",
+              marginBottom: 16,
+              flexWrap: "wrap",
             }}
           >
-            Operação comercial com mais clareza
+            <div>
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 900,
+                  marginBottom: 6,
+                }}
+              >
+                Novo lead
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.56)",
+                  fontSize: 14,
+                }}
+              >
+                Alimente o CRM com novos contatos e comece o processo do jeito certo.
+              </div>
+            </div>
           </div>
 
-          <h1
-            style={{
-              fontSize: "clamp(34px, 4vw, 56px)",
-              lineHeight: 1.04,
-              fontWeight: 900,
-              letterSpacing: -1.5,
-              marginBottom: 14,
-            }}
-          >
-            Seu comercial precisa de processo, não de memória.
-          </h1>
-
-          <p
-            style={{
-              margin: 0,
-              color: "rgba(255,255,255,0.68)",
-              fontSize: 17,
-              lineHeight: 1.8,
-              maxWidth: 780,
-            }}
-          >
-            Veja quem precisa de atenção hoje, registre contexto e transforme follow-up perdido em rotina comercial séria.
-          </p>
-        </Card>
-
-        <Card>
           <div
             style={{
-              color: "rgba(255,255,255,0.50)",
-              fontSize: 12,
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: 0.4,
-              marginBottom: 14,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr auto",
+              gap: 12,
+              alignItems: "center",
             }}
           >
-            Prioridade do dia
+            <input
+              placeholder="Nome do lead"
+              value={leadName}
+              onChange={(e) => setLeadName(e.target.value)}
+              style={inputStyle}
+            />
+
+            <input
+              placeholder="Telefone (com DDD)"
+              value={leadPhone}
+              onChange={(e) => setLeadPhone(e.target.value)}
+              style={inputStyle}
+            />
+
+            <button
+              type="button"
+              onClick={handleAddLead}
+              disabled={savingLead}
+              style={{
+                ...primaryButtonStyle,
+                minWidth: 170,
+                ...(savingLead ? disabledButtonStyle : {}),
+              }}
+            >
+              {savingLead ? "Salvando..." : "Adicionar lead"}
+            </button>
+          </div>
+        </DashboardCard>
+
+        <DashboardCard>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 16,
+              marginBottom: 18,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 900,
+                  marginBottom: 6,
+                }}
+              >
+                Leads
+              </div>
+              <div
+                style={{
+                  color: "rgba(255,255,255,0.56)",
+                  fontSize: 14,
+                }}
+              >
+                Visualize rapidamente o momento de cada oportunidade.
+              </div>
+            </div>
+
+            <div
+              style={{
+                color: "rgba(255,255,255,0.46)",
+                fontSize: 13,
+                fontWeight: 700,
+              }}
+            >
+              {leads.length} lead{leads.length === 1 ? "" : "s"}
+            </div>
           </div>
 
           <div style={{ display: "grid", gap: 12 }}>
-            {priorityLeads.length === 0 ? (
+            {leads.length === 0 ? (
               <div
                 style={{
-                  color: "rgba(255,255,255,0.58)",
-                  lineHeight: 1.7,
+                  borderRadius: 18,
+                  padding: 22,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.60)",
+                  lineHeight: 1.8,
                 }}
               >
-                Nenhum lead ainda. Adicione o primeiro contato para começar sua operação.
+                Nenhum lead ainda. Adicione seu primeiro contato para começar a usar o CRM de verdade.
               </div>
             ) : (
-              priorityLeads.map((lead) => {
-                const s = scoreLead(lead.last_contact);
+              leads.map((lead) => {
+                const score = scoreLead(lead.last_contact);
 
                 return (
                   <div
                     key={lead.id}
                     style={{
-                      padding: 14,
-                      borderRadius: 16,
-                      background: "rgba(255,255,255,0.04)",
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto",
+                      gap: 16,
+                      alignItems: "center",
+                      borderRadius: 20,
+                      padding: 16,
+                      background: "rgba(255,255,255,0.03)",
                       border: "1px solid rgba(255,255,255,0.07)",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 6,
-                      }}
-                    >
+                    <div>
                       <div
                         style={{
-                          fontWeight: 800,
-                          color: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          flexWrap: "wrap",
+                          marginBottom: 8,
                         }}
                       >
-                        {lead.name}
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            color: "#fff",
+                            fontSize: 16,
+                          }}
+                        >
+                          {lead.name}
+                        </div>
+
+                        <Badge
+                          color={score.color}
+                          background={score.soft}
+                          border={score.border}
+                        >
+                          {score.label}
+                        </Badge>
                       </div>
 
                       <div
                         style={{
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: s.color,
+                          color: "rgba(255,255,255,0.60)",
+                          fontSize: 14,
+                          lineHeight: 1.7,
                         }}
                       >
-                        {s.label}
+                        {nextActionForLead(lead.last_contact)}
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color: "rgba(255,255,255,0.42)",
+                          fontSize: 12,
+                        }}
+                      >
+                        Último contato: {formatRelative(lead.last_contact)}
                       </div>
                     </div>
 
                     <div
                       style={{
-                        color: "rgba(255,255,255,0.60)",
-                        fontSize: 13,
-                        lineHeight: 1.7,
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
                       }}
                     >
-                      {nextActionForLead(lead.last_contact)}
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenLead(lead)}
+                        style={secondaryButtonStyle}
+                      >
+                        Abrir
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(lead)}
+                        disabled={!lead.phone}
+                        style={{
+                          ...primaryButtonStyle,
+                          ...(!lead.phone ? disabledButtonStyle : {}),
+                        }}
+                      >
+                        WhatsApp
+                      </button>
                     </div>
                   </div>
                 );
               })
             )}
           </div>
-        </Card>
+        </DashboardCard>
       </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0,1fr))",
-          gap: 16,
-        }}
-      >
-        <MetricCard
-          label="Leads"
-          value={totalLeads}
-          help="Base comercial atualmente disponível para operação."
-        />
-        <MetricCard
-          label="Quentes"
-          value={hotLeads}
-          help="Leads com contato recente e maior chance de avanço."
-          accent="#86efac"
-        />
-        <MetricCard
-          label="Perdidos"
-          value={coldLeads}
-          help="Contatos que precisam ser reativados antes de esfriar de vez."
-          accent="#fda4af"
-        />
-      </div>
-
-      <Card>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr auto",
-            gap: 12,
-            alignItems: "center",
-          }}
-        >
-          <Input
-            placeholder="Nome do lead"
-            value={leadName}
-            onChange={(e: any) => setLeadName(e.target.value)}
-          />
-
-          <Input
-            placeholder="Telefone (com DDD)"
-            value={leadPhone}
-            onChange={(e: any) => setLeadPhone(e.target.value)}
-          />
-
-          <Button onClick={handleAddLead} disabled={savingLead}>
-            {savingLead ? "Salvando..." : "Adicionar lead"}
-          </Button>
-        </div>
-      </Card>
-
-      <Card>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 16,
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 900,
-                letterSpacing: -0.5,
-              }}
-            >
-              Leads
-            </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.56)",
-                fontSize: 14,
-                marginTop: 4,
-              }}
-            >
-              Visualize rapidamente o momento de cada oportunidade.
-            </div>
-          </div>
-
-          <div
-            style={{
-              color: "rgba(255,255,255,0.48)",
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            {leads.length} lead{leads.length === 1 ? "" : "s"}
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {leads.length === 0 ? (
-            <div
-              style={{
-                borderRadius: 18,
-                padding: 22,
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.60)",
-                lineHeight: 1.8,
-              }}
-            >
-              Nenhum lead ainda. Adicione seu primeiro contato para começar a usar o CRM de verdade.
-            </div>
-          ) : (
-            leads.map((lead) => {
-              const s = scoreLead(lead.last_contact);
-
-              return (
-                <div
-                  key={lead.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr auto",
-                    gap: 14,
-                    alignItems: "center",
-                    padding: 16,
-                    borderRadius: 18,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        marginBottom: 6,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          color: "#fff",
-                          fontSize: 16,
-                        }}
-                      >
-                        {lead.name}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 800,
-                          color: s.color,
-                          padding: "4px 10px",
-                          borderRadius: 999,
-                          background: "rgba(255,255,255,0.04)",
-                          border: "1px solid rgba(255,255,255,0.06)",
-                        }}
-                      >
-                        {s.label}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        color: "rgba(255,255,255,0.58)",
-                        fontSize: 14,
-                        lineHeight: 1.7,
-                      }}
-                    >
-                      {nextActionForLead(lead.last_contact)}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 6,
-                        color: "rgba(255,255,255,0.42)",
-                        fontSize: 12,
-                      }}
-                    >
-                      Último contato: {formatRelative(lead.last_contact)}
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Button
-                      variant="secondary"
-                      onClick={() => void handleOpenLead(lead)}
-                    >
-                      Abrir
-                    </Button>
-
-                    <Button
-                      onClick={() => handleOpenWhatsApp(lead)}
-                      disabled={!lead.phone}
-                    >
-                      WhatsApp
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </Card>
 
       {selectedLead ? (
         <div
           onClick={() => setSelectedLead(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.62)",
-            display: "flex",
-            justifyContent: "flex-end",
-            zIndex: 100,
-            backdropFilter: "blur(5px)",
-          }}
+          style={drawerOverlayStyle}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: 470,
-              maxWidth: "100%",
-              height: "100%",
-              padding: 24,
-              background:
-                "linear-gradient(180deg, rgba(11,18,32,0.98) 0%, rgba(2,6,23,1) 100%)",
-              borderLeft: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "-30px 0 80px rgba(0,0,0,0.35)",
-              overflowY: "auto",
-              display: "grid",
-              gap: 18,
-              alignContent: "start",
-            }}
+            style={drawerStyle}
           >
             <div
               style={{
@@ -646,7 +807,6 @@ export default function CRMClientPage() {
                     fontSize: 12,
                     fontWeight: 800,
                     textTransform: "uppercase",
-                    letterSpacing: 0.4,
                     marginBottom: 8,
                   }}
                 >
@@ -655,84 +815,46 @@ export default function CRMClientPage() {
 
                 <div
                   style={{
-                    fontSize: 28,
+                    fontSize: 30,
                     fontWeight: 900,
-                    letterSpacing: -0.8,
                     color: "#fff",
-                    marginBottom: 8,
+                    marginBottom: 10,
                   }}
                 >
                   {selectedLead.name}
                 </div>
 
-                <div
-                  style={{
-                    display: "inline-flex",
-                    padding: "6px 12px",
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    color: selectedLeadScore?.color || "#fff",
-                    fontWeight: 800,
-                    fontSize: 12,
-                  }}
-                >
-                  {selectedLeadScore?.label}
-                </div>
+                {selectedLeadScore ? (
+                  <Badge
+                    color={selectedLeadScore.color}
+                    background={selectedLeadScore.soft}
+                    border={selectedLeadScore.border}
+                  >
+                    {selectedLeadScore.label}
+                  </Badge>
+                ) : null}
               </div>
 
-              <Button variant="ghost" onClick={() => setSelectedLead(null)}>
+              <button
+                type="button"
+                onClick={() => setSelectedLead(null)}
+                style={secondaryButtonStyle}
+              >
                 Fechar
-              </Button>
+              </button>
             </div>
 
-            <Card>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.46)",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                  marginBottom: 10,
-                }}
-              >
-                Próxima ação
-              </div>
-
-              <div
-                style={{
-                  color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 16,
-                  lineHeight: 1.7,
-                }}
-              >
+            <DashboardCard>
+              <div style={drawerSectionLabelStyle}>Próxima ação</div>
+              <div style={drawerTextStrongStyle}>
                 {nextActionForLead(selectedLead.last_contact)}
               </div>
-            </Card>
+            </DashboardCard>
 
-            <Card>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.46)",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                  marginBottom: 10,
-                }}
-              >
-                Sugestão de mensagem
-              </div>
+            <DashboardCard>
+              <div style={drawerSectionLabelStyle}>Sugestão de mensagem</div>
 
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.82)",
-                  lineHeight: 1.8,
-                  fontSize: 14,
-                }}
-              >
+              <div style={drawerTextStyle}>
                 {generateMessage(selectedLead.name)}
               </div>
 
@@ -741,87 +863,63 @@ export default function CRMClientPage() {
                   marginTop: 14,
                   display: "flex",
                   gap: 10,
+                  flexWrap: "wrap",
                 }}
               >
-                <Button onClick={() => handleOpenWhatsApp(selectedLead)}>
+                <button
+                  type="button"
+                  onClick={() => handleOpenWhatsApp(selectedLead)}
+                  style={primaryButtonStyle}
+                >
                   Falar no WhatsApp
-                </Button>
+                </button>
 
-                <Button
-                  variant="secondary"
+                <button
+                  type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(
                       generateMessage(selectedLead.name)
                     );
                   }}
+                  style={secondaryButtonStyle}
                 >
                   Copiar mensagem
-                </Button>
+                </button>
               </div>
-            </Card>
+            </DashboardCard>
 
-            <Card>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.46)",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                  marginBottom: 10,
-                }}
-              >
-                Nova interação
-              </div>
+            <DashboardCard>
+              <div style={drawerSectionLabelStyle}>Nova interação</div>
 
-              <TextArea
+              <textarea
                 placeholder="Ex.: pediu proposta, respondeu com dúvida, quer retorno amanhã..."
                 value={note}
-                onChange={(e: any) => setNote(e.target.value)}
+                onChange={(e) => setNote(e.target.value)}
+                style={textareaStyle}
               />
 
-              <div
-                style={{
-                  marginTop: 12,
-                }}
-              >
-                <Button onClick={handleAddNote} disabled={savingNote}>
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={handleAddNote}
+                  disabled={savingNote}
+                  style={{
+                    ...primaryButtonStyle,
+                    ...(savingNote ? disabledButtonStyle : {}),
+                  }}
+                >
                   {savingNote ? "Salvando..." : "Salvar interação"}
-                </Button>
+                </button>
               </div>
-            </Card>
+            </DashboardCard>
 
-            <Card>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.46)",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                  marginBottom: 12,
-                }}
-              >
-                Timeline
-              </div>
+            <DashboardCard>
+              <div style={drawerSectionLabelStyle}>Timeline</div>
 
               {loadingEvents ? (
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.56)",
-                    fontSize: 14,
-                  }}
-                >
-                  Carregando histórico...
-                </div>
+                <div style={drawerMutedTextStyle}>Carregando histórico...</div>
               ) : events.length === 0 ? (
-                <div
-                  style={{
-                    color: "rgba(255,255,255,0.56)",
-                    fontSize: 14,
-                    lineHeight: 1.7,
-                  }}
-                >
+                <div style={drawerMutedTextStyle}>
                   Ainda não existe histórico para esse lead.
                 </div>
               ) : (
@@ -861,7 +959,6 @@ export default function CRMClientPage() {
                           <div
                             style={{
                               width: 1,
-                              flex: 1,
                               minHeight: 36,
                               background: "rgba(255,255,255,0.10)",
                               marginTop: 6,
@@ -870,11 +967,7 @@ export default function CRMClientPage() {
                         ) : null}
                       </div>
 
-                      <div
-                        style={{
-                          paddingBottom: 6,
-                        }}
-                      >
+                      <div style={{ paddingBottom: 6 }}>
                         <div
                           style={{
                             color: "#fff",
@@ -900,10 +993,117 @@ export default function CRMClientPage() {
                   ))}
                 </div>
               )}
-            </Card>
+            </DashboardCard>
           </div>
         </div>
       ) : null}
     </div>
   );
 }
+
+const inputStyle: CSSProperties = {
+  width: "100%",
+  minHeight: 50,
+  padding: "0 14px",
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "#fff",
+  outline: "none",
+  fontSize: 14,
+};
+
+const textareaStyle: CSSProperties = {
+  width: "100%",
+  minHeight: 120,
+  padding: 14,
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.03)",
+  color: "#fff",
+  outline: "none",
+  fontSize: 14,
+  resize: "vertical",
+};
+
+const primaryButtonStyle: CSSProperties = {
+  minHeight: 48,
+  padding: "0 16px",
+  borderRadius: 14,
+  border: "none",
+  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+  color: "#fff",
+  fontWeight: 900,
+  fontSize: 14,
+  cursor: "pointer",
+  boxShadow: "0 18px 40px rgba(37,99,235,0.25)",
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  minHeight: 48,
+  padding: "0 16px",
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.04)",
+  color: "#fff",
+  fontWeight: 800,
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const disabledButtonStyle: CSSProperties = {
+  opacity: 0.65,
+  cursor: "not-allowed",
+};
+
+const drawerOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.62)",
+  display: "flex",
+  justifyContent: "flex-end",
+  zIndex: 100,
+  backdropFilter: "blur(5px)",
+};
+
+const drawerStyle: CSSProperties = {
+  width: 500,
+  maxWidth: "100%",
+  height: "100%",
+  padding: 24,
+  background:
+    "linear-gradient(180deg, rgba(11,18,32,0.98) 0%, rgba(2,6,23,1) 100%)",
+  borderLeft: "1px solid rgba(255,255,255,0.08)",
+  boxShadow: "-30px 0 80px rgba(0,0,0,0.35)",
+  overflowY: "auto",
+  display: "grid",
+  gap: 18,
+  alignContent: "start",
+};
+
+const drawerSectionLabelStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.46)",
+  fontSize: 12,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  marginBottom: 10,
+};
+
+const drawerTextStrongStyle: CSSProperties = {
+  color: "#fff",
+  fontWeight: 800,
+  fontSize: 16,
+  lineHeight: 1.7,
+};
+
+const drawerTextStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.82)",
+  lineHeight: 1.8,
+  fontSize: 14,
+};
+
+const drawerMutedTextStyle: CSSProperties = {
+  color: "rgba(255,255,255,0.56)",
+  fontSize: 14,
+  lineHeight: 1.7,
+};
